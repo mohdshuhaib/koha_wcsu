@@ -318,8 +318,8 @@ export default function BarcodeGeneratorPage() {
           </div>
         </div>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.4fr)]">
-          <div className="rounded-2xl border border-primary-dark-grey bg-secondary-white p-5 shadow-lg">
+        <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.4fr)]">
+          <div className="min-w-0 rounded-2xl border border-primary-dark-grey bg-secondary-white p-5 shadow-lg">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold text-heading-text-black">Manual Barcodes</h2>
@@ -356,7 +356,7 @@ export default function BarcodeGeneratorPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-primary-dark-grey bg-secondary-white p-5 shadow-lg">
+          <div className="min-w-0 rounded-2xl border border-primary-dark-grey bg-secondary-white p-4 shadow-lg sm:p-5">
             <div className="mb-4 grid grid-cols-3 gap-2 rounded-xl bg-primary-grey p-1">
               <SourceButton active={activeTab === 'manual'} icon={<FileText size={16} />} label="Manual" onClick={() => setActiveTab('manual')} />
               <SourceButton active={activeTab === 'members'} icon={<Users size={16} />} label="Members" onClick={() => setActiveTab('members')} />
@@ -379,7 +379,7 @@ export default function BarcodeGeneratorPage() {
 
             {activeTab === 'members' && (
               <div className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+                <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
                   <SearchInput value={memberSearch} onChange={setMemberSearch} placeholder="Search name, barcode, batch" />
                   <SelectField label="Batch" value={selectedBatch} onChange={setSelectedBatch}>
                     <option value="ALL">All Batches</option>
@@ -411,7 +411,7 @@ export default function BarcodeGeneratorPage() {
 
             {activeTab === 'books' && (
               <div className="space-y-4">
-                <div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_150px_auto]">
+                <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_160px_160px_150px_auto]">
                   <SearchInput value={bookSearch} onChange={setBookSearch} placeholder="Search title, author, barcode" />
                   <SelectField label="Language" value={bookLanguage} onChange={setBookLanguage}>
                     <option value="ALL">All Languages</option>
@@ -653,11 +653,11 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 
 function CopyGroup({ disabled, copied, onCopy, onAppend }: { disabled: boolean; copied: boolean; onCopy: () => void; onAppend: () => void }) {
   return (
-    <div className="flex gap-2 self-end">
+    <div className="grid grid-cols-2 gap-2 self-end sm:flex">
       <button
         onClick={onCopy}
         disabled={disabled}
-        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-primary-dark-grey bg-white px-3 text-sm font-bold text-heading-text-black transition hover:bg-primary-grey disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-primary-dark-grey bg-white px-3 text-sm font-bold text-heading-text-black transition hover:bg-primary-grey disabled:cursor-not-allowed disabled:opacity-60"
       >
         {copied ? <Check size={16} /> : <Copy size={16} />}
         Copy
@@ -665,7 +665,7 @@ function CopyGroup({ disabled, copied, onCopy, onAppend }: { disabled: boolean; 
       <button
         onClick={onAppend}
         disabled={disabled}
-        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-button-yellow px-3 text-sm font-bold text-button-text-black transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-button-yellow px-3 text-sm font-bold text-button-text-black transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <RefreshCw size={16} />
         Add
@@ -678,10 +678,10 @@ function CopyableBarcode({ barcode, copied, onCopy }: { barcode: string; copied:
   return (
     <button
       onClick={() => onCopy(barcode, barcode)}
-      className="inline-flex items-center gap-2 rounded-lg bg-primary-grey px-3 py-1.5 font-mono text-sm font-bold text-heading-text-black transition hover:bg-primary-dark-grey"
+      className="inline-flex max-w-full items-center gap-2 rounded-lg bg-primary-grey px-3 py-1.5 font-mono text-sm font-bold text-heading-text-black transition hover:bg-primary-dark-grey"
       title="Copy barcode"
     >
-      {barcode}
+      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{barcode}</span>
       {copied ? <Check size={14} className="text-dark-green" /> : <Copy size={14} className="text-text-grey" />}
     </button>
   )
@@ -689,8 +689,32 @@ function CopyableBarcode({ barcode, copied, onCopy }: { barcode: string; copied:
 
 function DataTable({ headers, rows, emptyText }: { headers: string[]; rows: React.ReactNode[][]; emptyText: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-primary-dark-grey">
-      <div className="overflow-x-auto">
+    <div className="min-w-0">
+      <div className="grid gap-3 md:hidden">
+        {rows.length === 0 ? (
+          <div className="rounded-xl border border-primary-dark-grey bg-primary-grey px-4 py-10 text-center text-sm font-medium text-text-grey">
+            {emptyText}
+          </div>
+        ) : (
+          rows.map((row, rowIndex) => (
+            <div key={rowIndex} className="min-w-0 rounded-xl border border-primary-dark-grey bg-secondary-white p-4 shadow-sm">
+              {row.map((cell, cellIndex) => (
+                <div key={cellIndex} className="min-w-0 border-b border-primary-dark-grey py-2 last:border-b-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-sub-heading-text-grey">
+                    {headers[cellIndex]}
+                  </p>
+                  <div className="mt-1 min-w-0 break-words text-sm font-medium text-heading-text-black">
+                    {cell}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-xl border border-primary-dark-grey md:block">
+        <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-secondary-light-black text-white">
             <tr>
@@ -712,8 +736,10 @@ function DataTable({ headers, rows, emptyText }: { headers: string[]; rows: Reac
               rows.map((row, rowIndex) => (
                 <tr key={rowIndex} className="border-b border-primary-dark-grey last:border-b-0 hover:bg-primary-grey/70">
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="px-4 py-3 align-middle text-text-grey">
-                      {cell}
+                    <td key={cellIndex} className="max-w-[18rem] px-4 py-3 align-middle text-text-grey">
+                      <div className="min-w-0 break-words">
+                        {cell}
+                      </div>
                     </td>
                   ))}
                 </tr>
@@ -721,6 +747,7 @@ function DataTable({ headers, rows, emptyText }: { headers: string[]; rows: Reac
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )
