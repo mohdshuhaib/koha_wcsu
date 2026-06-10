@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, ReactNode } from 'react'
 import Loading from '../loading'
-import UpdatePatronPanel from '@/components/UpdatePatronPanel'
 import {
   Users,
   UserPlus,
@@ -18,7 +17,6 @@ import {
 export default function MemberPage() {
   const [loading, setLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [showUpdatePanel, setShowUpdatePanel] = useState(false)
   const router = useRouter()
 
   // --- Authentication Logic (Unchanged) ---
@@ -82,17 +80,13 @@ export default function MemberPage() {
             description="Remove a range of patrons by their barcodes."
           />
           <ActionCard
-            as="button"
-            onClick={() => setShowUpdatePanel(true)}
+            href="/members/update"
             icon={<Edit className="text-yellow-500" size={32} />}
-            title="Update a Patron"
-            description="Find a member by barcode to edit their details."
+            title="Update Patrons"
+            description="Update one patron or rename a whole batch."
           />
         </div>
       </div>
-
-      {/* The UpdatePatronPanel component is called here */}
-      <UpdatePatronPanel showPanel={showUpdatePanel} setShowPanel={setShowUpdatePanel} />
     </div>
   )
 }
@@ -100,8 +94,6 @@ export default function MemberPage() {
 // --- Reusable Action Card Component ---
 interface ActionCardProps {
   href?: string
-  onClick?: () => void
-  as?: 'link' | 'button'
   icon: ReactNode
   title: string
   description: string
@@ -109,8 +101,6 @@ interface ActionCardProps {
 
 function ActionCard({
   href,
-  onClick,
-  as = 'link',
   icon,
   title,
   description
@@ -129,14 +119,6 @@ function ActionCard({
   );
 
   const cardClasses = "block w-full text-left bg-secondary-white rounded-xl p-6 shadow-md border border-primary-dark-grey transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-
-  if (as === 'button') {
-    return (
-      <button onClick={onClick} className={cardClasses}>
-        {content}
-      </button>
-    )
-  }
 
   return (
     <Link href={href!} className={cardClasses}>

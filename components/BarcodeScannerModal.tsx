@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Camera, X, AlertCircle } from 'lucide-react'
+import { Camera, X, AlertCircle, Keyboard, ScanLine } from 'lucide-react'
+import clsx from 'classnames'
 
 type BarcodeScannerModalProps = {
   isOpen: boolean
@@ -23,12 +24,26 @@ export default function BarcodeScannerModal({
   )
   const [errorMessage, setErrorMessage] = useState('')
   const [starting, setStarting] = useState(false)
+  const [scanMode, setScanMode] = useState<'auto' | 'manual'>('auto')
+  const [manualValue, setManualValue] = useState('')
+
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop()
+      } catch {}
+      try {
+        await scannerRef.current.clear()
+      } catch {}
+      scannerRef.current = null
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
 
     const startScanner = async () => {
-      if (!isOpen) return
+      if (!isOpen || scanMode !== 'auto') return
 
       try {
         setStarting(true)
@@ -45,20 +60,17 @@ export default function BarcodeScannerModal({
         await scanner.start(
           { facingMode: 'environment' },
           {
-            fps: 10,
-            qrbox: { width: 250, height: 120 },
+            fps: 12,
+            qrbox: { width: 280, height: 130 },
             aspectRatio: 1.7778,
             disableFlip: false,
-          },
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true,
+            },
+          } as any,
           async (decodedText: string) => {
             if (!decodedText) return
-            try {
-              await scanner.stop()
-            } catch {}
-            try {
-              await scanner.clear()
-            } catch {}
-            scannerRef.current = null
+            await stopScanner()
             onScanSuccess(decodedText)
             onClose()
           },
@@ -79,20 +91,35 @@ export default function BarcodeScannerModal({
 
     return () => {
       cancelled = true
-      const stop = async () => {
-        if (scannerRef.current) {
-          try {
-            await scannerRef.current.stop()
-          } catch {}
-          try {
-            await scannerRef.current.clear()
-          } catch {}
-          scannerRef.current = null
-        }
-      }
-      stop()
+      stopScanner()
     }
-  }, [isOpen, onClose, onScanSuccess, regionId])
+  }, [isOpen, onClose, onScanSuccess, regionId, scanMode])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setScanMode('auto')
+      setManualValue('')
+      setErrorMessage('')
+    }
+  }, [isOpen])
+
+  const handleModeChange = async (mode: 'auto' | 'manual') => {
+    setErrorMessage('')
+    setScanMode(mode)
+    if (mode === 'manual') {
+      await stopScanner()
+    }
+  }
+
+  const handleManualSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const value = manualValue.trim()
+    if (!value) return
+
+    await stopScanner()
+    onScanSuccess(value)
+    onClose()
+  }
 
   if (!isOpen) return null
 
@@ -117,14 +144,66 @@ export default function BarcodeScannerModal({
 
         <div className="p-4 space-y-4">
           <p className="text-sm text-text-grey">
-            Point the camera at the barcode. On desktop, continue using your barcode scanner machine.
+            Use automatic camera scanning on mobile. If the camera misses or reads wrongly, switch to manual entry.
           </p>
 
-          <div className="rounded-lg border border-primary-dark-grey bg-black overflow-hidden">
-            <div id={regionId} className="w-full min-h-[260px]" />
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-primary-grey p-1">
+            <button
+              type="button"
+              onClick={() => handleModeChange('auto')}
+              className={clsx(
+                'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition',
+                scanMode === 'auto'
+                  ? 'bg-dark-green text-white shadow-sm'
+                  : 'text-text-grey hover:bg-white'
+              )}
+            >
+              <ScanLine size={16} />
+              Auto Scan
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('manual')}
+              className={clsx(
+                'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition',
+                scanMode === 'manual'
+                  ? 'bg-dark-green text-white shadow-sm'
+                  : 'text-text-grey hover:bg-white'
+              )}
+            >
+              <Keyboard size={16} />
+              Manual
+            </button>
           </div>
 
-          {starting && (
+          {scanMode === 'auto' ? (
+            <div className="rounded-lg border border-primary-dark-grey bg-black overflow-hidden">
+              <div id={regionId} className="w-full min-h-[260px]" />
+            </div>
+          ) : (
+            <form onSubmit={handleManualSubmit} className="space-y-3 rounded-xl border border-primary-dark-grey bg-primary-grey p-4">
+              <label htmlFor={`${regionId}-manual`} className="block text-sm font-semibold text-heading-text-black">
+                Enter barcode manually
+              </label>
+              <input
+                id={`${regionId}-manual`}
+                value={manualValue}
+                onChange={(event) => setManualValue(event.target.value)}
+                autoFocus
+                className="h-12 w-full rounded-xl border border-primary-dark-grey bg-white px-4 text-base font-semibold text-heading-text-black outline-none focus:ring-2 focus:ring-dark-green"
+                placeholder="Type or paste barcode"
+              />
+              <button
+                type="submit"
+                disabled={!manualValue.trim()}
+                className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-button-yellow px-4 text-sm font-bold text-button-text-black transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Use This Barcode
+              </button>
+            </form>
+          )}
+
+          {starting && scanMode === 'auto' && (
             <div className="text-sm text-text-grey font-medium">
               Starting camera...
             </div>

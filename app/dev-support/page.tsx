@@ -17,7 +17,8 @@ import {
   Edit,
   X,
   Paperclip,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ClipboardPaste
 } from 'lucide-react'
 import clsx from 'classnames'
 
@@ -61,6 +62,35 @@ export default function DevSupportPage() {
     init()
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      if (editingId) return
+
+      const imageItem = Array.from(event.clipboardData?.items || []).find((item) =>
+        item.type.startsWith('image/')
+      )
+      const pastedFile = imageItem?.getAsFile()
+
+      if (!pastedFile) return
+
+      event.preventDefault()
+      setScreenshotFile(
+        new File([pastedFile], `pasted-screenshot-${Date.now()}.${getImageExtension(pastedFile.type)}`, {
+          type: pastedFile.type,
+        })
+      )
+    }
+
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [editingId])
+
   const fetchFeedbacks = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -72,22 +102,38 @@ export default function DevSupportPage() {
     setLoading(false)
   }
 
+  const getImageExtension = (mimeType: string) => {
+    const subtype = mimeType.split('/')[1] || 'png'
+    return subtype === 'jpeg' ? 'jpg' : subtype
+  }
+
+  const setScreenshotFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please attach an image file.')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size too large. Please select an image under 5MB.")
+      return
+    }
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setSelectedFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
+  }
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert("File size too large. Please select an image under 5MB.");
-        return;
-      }
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setScreenshotFile(e.target.files[0])
     }
   }
 
   const removeFile = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setSelectedFile(null)
+    setPreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const uploadImage = async (file: File): Promise<string | null> => {
@@ -254,6 +300,7 @@ export default function DevSupportPage() {
                         {/* --- File Upload Section --- */}
                         {!editingId && (
                             <div>
+                                <label className="block text-sm font-semibold text-text-grey mb-2">Screenshot</label>
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -262,13 +309,26 @@ export default function DevSupportPage() {
                                     onChange={handleFileSelect}
                                 />
                                 {!selectedFile ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800 transition"
-                                    >
-                                        <Paperclip size={16} /> Attach Screenshot
-                                    </button>
+                                    <div className="rounded-xl border border-dashed border-primary-dark-grey bg-primary-grey p-4">
+                                        <div className="flex items-start gap-3">
+                                            <ClipboardPaste size={18} className="mt-0.5 shrink-0 text-dark-green" />
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-heading-text-black">
+                                                    Paste a screenshot here with Ctrl+V
+                                                </p>
+                                                <p className="mt-1 text-xs leading-5 text-text-grey">
+                                                    You can also choose an image file from your device.
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-primary-dark-grey bg-white px-3 py-2 text-sm font-semibold text-blue-600 transition hover:bg-secondary-white hover:text-blue-800"
+                                                >
+                                                    <Paperclip size={16} /> Select File
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className="relative mt-2 inline-block">
                                         <img src={previewUrl!} alt="Preview" className="h-20 w-auto rounded-lg border border-primary-dark-grey shadow-sm" />

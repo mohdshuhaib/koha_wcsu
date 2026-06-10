@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Menu, X, ChevronDown, Code } from 'lucide-react'
+import { Menu, X, ChevronDown, Code, Search, LibraryBig } from 'lucide-react'
 import clsx from 'classnames'
 
 interface NavItemType {
@@ -19,6 +19,7 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [role, setRole] = useState<'member' | 'librarian' | 'developer' | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [mobileSearch, setMobileSearch] = useState('')
 
   useEffect(() => {
     const getSessionAndRole = async () => {
@@ -58,7 +59,15 @@ export default function Navbar() {
 
   useEffect(() => {
     setIsMenuOpen(false)
+    setMobileSearch('')
   }, [pathname])
+
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMenuOpen])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -101,6 +110,7 @@ export default function Navbar() {
               { href: '/members', label: 'Patrons' },
               { href: '/fines', label: 'Fines' },
               { href: '/periodicals', label: 'Periodicals' },
+              { href: '/barcode-generator', label: 'Barcode Generator' },
               { href: '/dev-support', label: 'System Support' },
             ],
           },
@@ -110,16 +120,38 @@ export default function Navbar() {
       : []),
   ], [isLoggedIn, role])
 
+  const mobileNavItems = useMemo(() => {
+    const query = mobileSearch.trim().toLowerCase()
+    if (!query) return navItems
+
+    return navItems
+      .map((item) => {
+        if (!item.children) return item.label.toLowerCase().includes(query) ? item : null
+
+        const matchingChildren = item.children.filter((child) =>
+          child.label.toLowerCase().includes(query)
+        )
+
+        if (item.label.toLowerCase().includes(query)) return item
+        if (matchingChildren.length > 0) return { ...item, children: matchingChildren }
+        return null
+      })
+      .filter(Boolean) as NavItemType[]
+  }, [mobileSearch, navItems])
+
   return (
     <>
-      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-green-new/95 backdrop-blur-xl supports-[backdrop-filter]:bg-green-new/85">
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-primary-dark-grey bg-secondary-white/95 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-secondary-white/85">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-3">
             <Link
               href="/"
-              className="min-w-0 truncate text-base font-bold uppercase tracking-[0.18em] text-white sm:text-lg"
+              className="flex min-w-0 items-center gap-2 truncate text-base font-bold uppercase tracking-[0.16em] text-heading-text-black sm:text-lg"
             >
-              PMSA Library
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-dark-green text-white">
+                <LibraryBig size={19} />
+              </span>
+              <span className="truncate">PMSA Library</span>
             </Link>
 
             <div className="hidden items-center gap-1 lg:gap-2 md:flex">
@@ -136,7 +168,7 @@ export default function Navbar() {
               aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white transition hover:bg-white/20 md:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-primary-dark-grey bg-primary-grey text-heading-text-black transition hover:bg-primary-dark-grey md:hidden"
             >
               {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -146,7 +178,7 @@ export default function Navbar() {
 
       <div
         className={clsx(
-          'fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity md:hidden',
+          'fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-200 md:hidden',
           isMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         )}
         onClick={() => setIsMenuOpen(false)}
@@ -154,21 +186,30 @@ export default function Navbar() {
 
       <aside
         className={clsx(
-          'fixed right-0 top-16 z-50 h-[calc(100dvh-4rem)] w-full max-w-sm transform border-l border-white/10 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-xl transition-transform duration-300 md:hidden',
+          'fixed right-0 top-16 z-50 h-[calc(100dvh-4rem)] w-full max-w-sm transform border-l border-primary-dark-grey bg-secondary-white p-4 shadow-2xl transition-transform duration-300 md:hidden',
           isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="mb-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+          <div className="mb-4 space-y-3">
+            <div className="rounded-2xl border border-primary-dark-grey bg-primary-grey p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sub-heading-text-grey">
                 Navigation
               </p>
+            </div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-grey" />
+              <input
+                value={mobileSearch}
+                onChange={(event) => setMobileSearch(event.target.value)}
+                placeholder="Search menu"
+                className="h-11 w-full rounded-xl border border-primary-dark-grey bg-primary-grey pl-10 pr-3 text-sm font-medium text-heading-text-black outline-none focus:ring-2 focus:ring-dark-green"
+              />
             </div>
           </div>
 
           <div className="flex-1 space-y-2 overflow-y-auto pr-1">
-            {navItems.map((item) => (
+            {mobileNavItems.length > 0 ? mobileNavItems.map((item) => (
               <NavItem
                 key={item.label}
                 item={item}
@@ -176,10 +217,14 @@ export default function Navbar() {
                 isMobile
                 onLinkClick={() => setIsMenuOpen(false)}
               />
-            ))}
+            )) : (
+              <div className="rounded-xl border border-primary-dark-grey bg-primary-grey p-4 text-center text-sm font-medium text-text-grey">
+                No menu items found.
+              </div>
+            )}
           </div>
 
-          <div className="mt-4 border-t border-white/10 pt-4">
+          <div className="mt-4 border-t border-primary-dark-grey pt-4">
             <AuthButton
               isLoggedIn={isLoggedIn}
               handleLogout={handleLogout}
@@ -204,15 +249,32 @@ function NavItem({
   onLinkClick?: () => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const isActive =
     item.href === pathname || item.children?.some((child) => child.href === pathname)
+
+  useEffect(() => {
+    if (isMobile || !isOpen) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [isMobile, isOpen])
+
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
 
   if (item.children) {
     return (
       <div
+        ref={containerRef}
         className="relative"
-        onMouseEnter={() => !isMobile && setIsOpen(true)}
-        onMouseLeave={() => !isMobile && setIsOpen(false)}
       >
         <button
           type="button"
@@ -222,7 +284,9 @@ function NavItem({
             isMobile ? 'min-h-11' : '',
             isActive
               ? 'bg-dark-green text-white shadow-sm'
-              : 'text-gray-100 hover:bg-white/10 hover:text-white'
+              : isMobile
+                ? 'text-heading-text-black hover:bg-primary-grey'
+                : 'text-text-grey hover:bg-primary-grey hover:text-heading-text-black'
           )}
         >
           <span className="flex items-center gap-2">
@@ -242,7 +306,7 @@ function NavItem({
             className={clsx(
               'mt-2 space-y-1',
               !isMobile &&
-                'absolute left-0 top-full mt-2 min-w-[220px] rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl backdrop-blur-xl'
+                'absolute left-0 top-full mt-2 min-w-[230px] rounded-2xl border border-primary-dark-grey bg-secondary-white p-2 shadow-2xl'
             )}
           >
             {item.children.map((child) => (
@@ -254,7 +318,7 @@ function NavItem({
                   'block rounded-xl px-4 py-3 text-sm font-medium transition',
                   pathname === child.href
                     ? 'bg-dark-green text-white'
-                    : 'text-gray-100 hover:bg-white/10 hover:text-white'
+                    : 'text-text-grey hover:bg-primary-grey hover:text-heading-text-black'
                 )}
               >
                 {child.label}
@@ -275,7 +339,9 @@ function NavItem({
         isMobile ? 'min-h-11 w-full' : '',
         isActive
           ? 'bg-dark-green text-white shadow-sm'
-          : 'text-gray-100 hover:bg-white/10 hover:text-white'
+          : isMobile
+            ? 'text-heading-text-black hover:bg-primary-grey'
+            : 'text-text-grey hover:bg-primary-grey hover:text-heading-text-black'
       )}
     >
       {item.icon}
@@ -313,7 +379,7 @@ function AuthButton({
       href="/login"
       className={clsx(
         'inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition min-h-11',
-        'bg-dark-green text-white hover:bg-green-900',
+        'bg-button-yellow text-button-text-black hover:bg-yellow-500',
         isMobile ? 'w-full' : ''
       )}
     >

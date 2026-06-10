@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { deleteAuthUserByEmail } from '@/app/actions/deleteMember'
 import Link from 'next/link'
@@ -20,11 +20,65 @@ export default function DeleteMultipleMembers() {
   const [barcodes, setBarcodes] = useState('')
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success' | 'warning', message: string } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [batches, setBatches] = useState<string[]>([])
+  const [selectedBatch, setSelectedBatch] = useState('')
+  const [batchLoading, setBatchLoading] = useState(false)
 
   // State for the two-step process
   const [step, setStep] = useState<'find' | 'confirm'>('find')
   const [membersToDelete, setMembersToDelete] = useState<MemberInfo[]>([])
   const [notFoundBarcodes, setNotFoundBarcodes] = useState<string[]>([])
+
+  useEffect(() => {
+    const fetchBatches = async () => {
+      const { data } = await supabase
+        .from('members')
+        .select('batch')
+        .not('batch', 'is', null)
+        .order('batch', { ascending: true })
+
+      const uniqueBatches = Array.from(
+        new Set(((data || []) as { batch: string | null }[]).map((member) => member.batch).filter(Boolean) as string[])
+      )
+
+      setBatches(uniqueBatches)
+    }
+
+    fetchBatches()
+  }, [])
+
+  const handleBatchSelect = async (batch: string) => {
+    setSelectedBatch(batch)
+    setFeedback(null)
+    setStep('find')
+    setMembersToDelete([])
+    setNotFoundBarcodes([])
+
+    if (!batch) return
+
+    setBatchLoading(true)
+    const { data, error } = await supabase
+      .from('members')
+      .select('barcode')
+      .eq('batch', batch)
+      .order('name', { ascending: true })
+
+    if (error) {
+      setFeedback({ type: 'error', message: `Could not load batch barcodes: ${error.message}` })
+      setBatchLoading(false)
+      return
+    }
+
+    const batchBarcodes = ((data || []) as { barcode: string }[]).map((member) => member.barcode).filter(Boolean)
+    setBarcodes(batchBarcodes.join(', '))
+    setFeedback({
+      type: batchBarcodes.length > 0 ? 'warning' : 'error',
+      message: batchBarcodes.length > 0
+        ? `Loaded ${batchBarcodes.length} barcode(s) from batch ${batch}. Review before deleting.`
+        : `No patrons found in batch ${batch}.`,
+    })
+    setBatchLoading(false)
+  }
 
   const handleFindMembers = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,6 +156,7 @@ export default function DeleteMultipleMembers() {
 
   const resetState = () => {
     setBarcodes('')
+    setSelectedBatch('')
     setMembersToDelete([])
     setNotFoundBarcodes([])
     setStep('find')
@@ -135,6 +190,30 @@ export default function DeleteMultipleMembers() {
           {step === 'find' ? (
             // --- Step 1: Find Patrons Form ---
             <form onSubmit={handleFindMembers} className="space-y-4">
+              <div className="rounded-xl border border-primary-dark-grey bg-primary-grey p-4">
+                <label htmlFor="batch-select" className="block text-sm font-semibold text-text-grey">
+                  Delete a whole batch
+                </label>
+                <p className="mt-1 text-xs leading-5 text-text-grey">
+                  Select a batch to automatically place all member barcodes from that batch into the delete box.
+                </p>
+                <select
+                  id="batch-select"
+                  value={selectedBatch}
+                  onChange={(event) => handleBatchSelect(event.target.value)}
+                  disabled={batchLoading}
+                  className="mt-3 w-full rounded-lg border border-primary-dark-grey bg-secondary-white p-3 text-sm font-semibold text-heading-text-black outline-none focus:ring-2 focus:ring-dark-green"
+                >
+                  <option value="">Select batch</option>
+                  {batches.map((batch) => (
+                    <option key={batch} value={batch}>{batch}</option>
+                  ))}
+                </select>
+                {batchLoading && (
+                  <p className="mt-2 text-xs font-semibold text-text-grey">Loading batch barcodes...</p>
+                )}
+              </div>
+
               <label htmlFor="barcodes" className="block text-sm font-semibold text-text-grey">Enter each barcode on a new line or separated by commas.</label>
               <textarea
                 id="barcodes"

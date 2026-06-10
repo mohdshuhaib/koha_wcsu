@@ -32,6 +32,48 @@ export default function CheckPage() {
     checkAuth()
   }, [router])
 
+  useEffect(() => {
+    const shortcuts: Record<string, Tab> = {
+      o: 'checkout',
+      i: 'checkin',
+      r: 'renew',
+      h: 'hold',
+    }
+
+    const isTypingTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false
+      const tagName = target.tagName.toLowerCase()
+
+      return (
+        tagName === 'input' ||
+        tagName === 'textarea' ||
+        tagName === 'select' ||
+        target.isContentEditable
+      )
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        isTypingTarget(event.target)
+      ) {
+        return
+      }
+
+      const nextTab = shortcuts[event.key.toLowerCase()]
+      if (!nextTab) return
+
+      event.preventDefault()
+      setActiveTab(nextTab)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const renderContent = () => {
     switch (activeTab) {
       case 'checkout': return <CheckOutForm />
@@ -59,24 +101,28 @@ export default function CheckPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <TabButton
             label="Check Out"
+            shortcutKey="O"
             icon={<ArrowUpRight size={18} />}
             isActive={activeTab === 'checkout'}
             onClick={() => setActiveTab('checkout')}
           />
           <TabButton
             label="Check In"
+            shortcutKey="I"
             icon={<LogIn size={18} />}
             isActive={activeTab === 'checkin'}
             onClick={() => setActiveTab('checkin')}
           />
           <TabButton
             label="Renew Book"
+            shortcutKey="R"
             icon={<Repeat size={18} />}
             isActive={activeTab === 'renew'}
             onClick={() => setActiveTab('renew')}
           />
           <TabButton
             label="Hold Books"
+            shortcutKey="H"
             icon={<Library size={18} />}
             isActive={activeTab === 'hold'}
             onClick={() => setActiveTab('hold')}
@@ -93,7 +139,7 @@ export default function CheckPage() {
 }
 
 // Reusable Tab Button Component
-function TabButton({ label, icon, isActive, onClick }: { label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) {
+function TabButton({ label, shortcutKey, icon, isActive, onClick }: { label: string, shortcutKey: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -106,6 +152,16 @@ function TabButton({ label, icon, isActive, onClick }: { label: string, icon: Re
     >
       {icon}
       <span>{label}</span>
+      <kbd
+        className={clsx(
+          'ml-1 rounded-md border px-1.5 py-0.5 text-[10px] font-black leading-none',
+          isActive
+            ? 'border-white/40 bg-white/15 text-white'
+            : 'border-primary-dark-grey bg-primary-grey text-text-grey'
+        )}
+      >
+        {shortcutKey}
+      </kbd>
     </button>
   )
 }
