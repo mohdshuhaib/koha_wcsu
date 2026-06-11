@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [modalLoading, setModalLoading] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState('All')
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [exportingDueBooks, setExportingDueBooks] = useState(false)
 
   useEffect(() => {
     const checkAuthAndFetchStats = async () => {
@@ -153,6 +154,38 @@ export default function DashboardPage() {
   const uniqueBatches = ['All', ...Array.from(new Set(allDueBooks.map(book => book.member?.batch).filter(Boolean)))];
   const filteredDueBooks = selectedBatch === 'All' ? allDueBooks : allDueBooks.filter(book => book.member?.batch === selectedBatch);
 
+  const handleDownloadUnreturnedByBatch = () => {
+    if (allDueBooks.length === 0) return
+
+    setExportingDueBooks(true)
+
+    const workbook = XLSX.utils.book_new()
+    const grouped = allDueBooks.reduce((acc: Record<string, any[]>, record) => {
+      const batch = record.member?.batch || 'Unknown Batch'
+      if (!acc[batch]) acc[batch] = []
+      acc[batch].push(record)
+      return acc
+    }, {})
+
+    Object.entries(grouped)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([batch, records]) => {
+        const rows = records.map((record) => ({
+          Book: record.book?.title || 'Unknown Book',
+          Member: record.member?.name || 'Unknown Member',
+          Batch: record.member?.batch || 'Unknown Batch',
+          'Due Date': dayjs(record.due_date).format('DD MMM YYYY'),
+          Status: dayjs().isAfter(dayjs(record.due_date), 'day') ? 'Overdue' : 'Borrowed',
+        }))
+
+        const worksheet = XLSX.utils.json_to_sheet(rows)
+        XLSX.utils.book_append_sheet(workbook, worksheet, sanitizeSheetName(batch))
+      })
+
+    XLSX.writeFile(workbook, `unreturned-books-by-batch-${dayjs().format('YYYY-MM-DD')}.xlsx`)
+    setExportingDueBooks(false)
+  }
+
   const languageBreakdown = [
     { label: 'Malayalam', code: 'MAL', count: stats.malBooks, color: 'bg-yellow-400' },
     { label: 'English', code: 'ENG', count: stats.engBooks, color: 'bg-blue-400' },
@@ -239,12 +272,22 @@ export default function DashboardPage() {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="All Unreturned Books">
         {modalLoading ? <div className="p-8"><Loading /></div> : allDueBooks.length === 0 ? <p className="p-8 text-text-grey text-center">No outstanding books found. Great job!</p> : (
           <div className="flex flex-col">
-            <div className="p-4 border-b border-primary-dark-grey flex flex-wrap gap-2">
-              {uniqueBatches.map(batch => (
-                <button key={batch} onClick={() => setSelectedBatch(batch)} className={clsx("px-3 py-1 rounded-full text-xs font-semibold transition", selectedBatch === batch ? 'bg-blue-600 text-white' : 'bg-primary-grey text-text-grey hover:bg-primary-dark-grey')}>
-                  {batch}
-                </button>
-              ))}
+            <div className="p-4 border-b border-primary-dark-grey flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                {uniqueBatches.map(batch => (
+                  <button key={batch} onClick={() => setSelectedBatch(batch)} className={clsx("px-3 py-1 rounded-full text-xs font-semibold transition", selectedBatch === batch ? 'bg-blue-600 text-white' : 'bg-primary-grey text-text-grey hover:bg-primary-dark-grey')}>
+                    {batch}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={handleDownloadUnreturnedByBatch}
+                disabled={exportingDueBooks || allDueBooks.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Download size={16} />
+                {exportingDueBooks ? 'Exporting...' : 'Export Excel'}
+              </button>
             </div>
             <div className="overflow-y-auto max-h-[65vh]">
               <table className="min-w-full text-sm">
@@ -278,6 +321,11 @@ export default function DashboardPage() {
       </Modal>
     </>
   )
+}
+
+function sanitizeSheetName(name: string) {
+  const cleaned = name.replace(/[\\/?*[\]:]/g, ' ').trim() || 'Sheet'
+  return cleaned.slice(0, 31)
 }
 
 function StatCard({ label, value, icon }: { label: string; value: number | string; icon: React.ReactNode }) {

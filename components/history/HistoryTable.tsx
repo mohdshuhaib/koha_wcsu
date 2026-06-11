@@ -13,13 +13,25 @@ interface Props {
 
 export default function HistoryTable({ records, onDelete, onMemberClick }: Props) {
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'returned' | 'borrowed' | 'overdue'>('all')
   const [page, setPage] = useState(1)
   const pageSize = 10
 
-  const filtered = records.filter(r =>
-    (r.members?.name || 'Unknown').toLowerCase().includes(search.toLowerCase()) ||
-    (r.books?.title || 'Unknown').toLowerCase().includes(search.toLowerCase())
-  )
+  const getStatus = (record: HistoryRecord) => {
+    if (record.return_date) return 'returned'
+    if (dayjs().isAfter(dayjs(record.due_date), 'day')) return 'overdue'
+    return 'borrowed'
+  }
+
+  const filtered = records.filter(r => {
+    const matchesSearch =
+      (r.members?.name || 'Unknown').toLowerCase().includes(search.toLowerCase()) ||
+      (r.books?.title || 'Unknown').toLowerCase().includes(search.toLowerCase())
+
+    const matchesStatus = statusFilter === 'all' || getStatus(r) === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
 
   const totalPages = Math.ceil(filtered.length / pageSize)
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
@@ -29,15 +41,35 @@ export default function HistoryTable({ records, onDelete, onMemberClick }: Props
 
   return (
     <div className="bg-secondary-white border border-primary-dark-grey rounded-xl p-6 shadow-lg">
-      <div className="relative mb-6">
-        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4"><Search className="h-5 w-5 text-text-grey" /></div>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search history..."
-          className="w-full md:w-1/2 p-3 pl-12 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green"
-        />
+      <div className="mb-6 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="relative">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4"><Search className="h-5 w-5 text-text-grey" /></div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            placeholder="Search history..."
+            className="w-full p-3 pl-12 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green"
+          />
+        </div>
+
+        <select
+          value={statusFilter}
+          onChange={(event) => {
+            setStatusFilter(event.target.value as typeof statusFilter)
+            setPage(1)
+          }}
+          className="w-full rounded-lg border border-primary-dark-grey bg-primary-grey p-3 text-sm font-bold text-heading-text-black outline-none focus:ring-2 focus:ring-dark-green"
+          aria-label="Filter transaction status"
+        >
+          <option value="all">All Status</option>
+          <option value="returned">Returned</option>
+          <option value="borrowed">Borrowed</option>
+          <option value="overdue">Overdue</option>
+        </select>
       </div>
 
       <div className="overflow-x-auto">
