@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Loading from '../loading'
 import dayjs from 'dayjs'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import {
   IndianRupee, Users, History, Printer, CreditCard, Eraser, X, AlertTriangle, Plus, Wallet, TrendingDown
 } from 'lucide-react'
@@ -264,44 +262,18 @@ export default function FinesPage() {
   }
 
   const handlePrint = () => {
-    const doc = new jsPDF()
-    const tableColumns = ["Member", "Book", "Total Fine", "Paid", "Remaining"]
-    const tableRows: (string | number)[][] = []
-
-    filteredFines.forEach(fine => {
-        const remaining = (fine.fine || 0) - (fine.paid_amount || 0)
-        const fineData = [
-            fine.member?.name || 'N/A',
-            fine.book?.title || 'N/A',
-            `Rs. ${fine.fine}`,
-            `Rs. ${fine.paid_amount || 0}`,
-            `Rs. ${remaining}`,
-        ];
-        tableRows.push(fineData);
-    });
-
     const totalOwed = filteredFines.reduce((sum, f) => sum + (f.fine - (f.paid_amount || 0)), 0);
+    const printWindow = window.open('', '_blank', 'width=1100,height=800')
 
-    doc.setFontSize(18);
-    doc.text(`Fine Report - ${selectedBatch} Batch`, 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${dayjs().format('DD MMM YYYY')}`, 14, 29);
+    if (!printWindow) {
+      alert('Could not open print report. Please allow popups for this site.')
+      return
+    }
 
-    autoTable(doc, {
-        startY: 35,
-        head: [tableColumns],
-        body: tableRows,
-        theme: 'grid',
-        headStyles: { fillColor: [34, 34, 34] }
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total Remaining Fine: Rs. ${totalOwed.toLocaleString('en-IN')}`, 14, finalY + 10);
-
-    doc.save(`fine_report_${selectedBatch}_${dayjs().format('YYYY-MM-DD')}.pdf`)
+    printWindow.document.write(createFineReportHtml(filteredFines, selectedBatch, totalOwed))
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.setTimeout(() => printWindow.print(), 500)
   }
 
   const openPaymentModal = (fineRecord: FineRecord) => {
@@ -457,6 +429,226 @@ export default function FinesPage() {
       </Modal>
     </>
   )
+}
+
+function createFineReportHtml(fines: FineRecord[], selectedBatch: string, totalOwed: number) {
+  const rows = fines.map((fine, index) => {
+    const remaining = (fine.fine || 0) - (fine.paid_amount || 0)
+    const bookTitle = fine.book?.title || 'N/A'
+    const bookClass = getScriptClass(bookTitle)
+
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>
+          <strong>${escapeHtml(fine.member?.name || 'N/A')}</strong>
+          <div class="muted">${escapeHtml(fine.member?.batch || '-')}</div>
+        </td>
+        <td class="${bookClass}">${escapeHtml(bookTitle)}</td>
+        <td class="amount">Rs. ${Number(fine.fine || 0).toLocaleString('en-IN')}</td>
+        <td class="amount">Rs. ${Number(fine.paid_amount || 0).toLocaleString('en-IN')}</td>
+        <td class="amount strong">Rs. ${Number(remaining).toLocaleString('en-IN')}</td>
+      </tr>
+    `
+  }).join('')
+
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Fine Report - ${escapeHtml(selectedBatch)} Batch</title>
+        <style>
+          @font-face {
+            font-family: 'AnekMalayalamReport';
+            src: url('/fonts/AnekMalayalam-Variable.ttf') format('truetype');
+            font-weight: 100 800;
+          }
+
+          @font-face {
+            font-family: 'NotoNaskhArabicReport';
+            src: url('/fonts/NotoNaskhArabic-Regular.ttf') format('truetype');
+            font-weight: 400;
+          }
+
+          @page {
+            size: A4;
+            margin: 14mm;
+          }
+
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            color: #111827;
+            font-family: 'AnekMalayalamReport', Arial, sans-serif;
+            background: #ffffff;
+          }
+
+          .report-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            border-bottom: 2px solid #1f2937;
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+          }
+
+          h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 0.02em;
+          }
+
+          .meta {
+            margin-top: 4px;
+            color: #4b5563;
+            font-size: 12px;
+          }
+
+          .total-box {
+            min-width: 180px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 12px;
+            text-align: right;
+          }
+
+          .total-box span {
+            display: block;
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+
+          .total-box strong {
+            display: block;
+            margin-top: 3px;
+            font-size: 18px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 11px;
+          }
+
+          th {
+            background: #222222;
+            color: #ffffff;
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #222222;
+          }
+
+          td {
+            vertical-align: top;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+            word-break: normal;
+          }
+
+          th:nth-child(1), td:nth-child(1) { width: 34px; text-align: center; }
+          th:nth-child(2), td:nth-child(2) { width: 22%; }
+          th:nth-child(3), td:nth-child(3) { width: 38%; }
+          th:nth-child(4), td:nth-child(4),
+          th:nth-child(5), td:nth-child(5),
+          th:nth-child(6), td:nth-child(6) { width: 12%; }
+
+          .muted {
+            color: #6b7280;
+            font-size: 10px;
+            margin-top: 2px;
+          }
+
+          .amount {
+            text-align: right;
+            white-space: nowrap;
+            font-family: Arial, sans-serif;
+          }
+
+          .strong {
+            font-weight: 700;
+          }
+
+          .ml {
+            font-family: 'AnekMalayalamReport', sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+          }
+
+          .arabic {
+            direction: rtl;
+            text-align: right;
+            font-family: 'NotoNaskhArabicReport', 'Arial', sans-serif;
+            font-size: 13px;
+            line-height: 1.7;
+          }
+
+          .latin {
+            font-family: 'AnekMalayalamReport', Arial, sans-serif;
+          }
+
+          @media print {
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="report-header">
+          <div>
+            <h1>Fine Report - ${escapeHtml(selectedBatch)} Batch</h1>
+            <div class="meta">Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')}</div>
+            <div class="meta">Total records: ${fines.length}</div>
+          </div>
+          <div class="total-box">
+            <span>Total Remaining Fine</span>
+            <strong>Rs. ${Number(totalOwed).toLocaleString('en-IN')}</strong>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Member</th>
+              <th>Book</th>
+              <th>Total Fine</th>
+              <th>Paid</th>
+              <th>Remaining</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `
+}
+
+function getScriptClass(value: string) {
+  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(value)) return 'arabic'
+  if (/[\u0D00-\u0D7F]/.test(value)) return 'ml'
+  return 'latin'
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
 
 // --- Helper Components ---
