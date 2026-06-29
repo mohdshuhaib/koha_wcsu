@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const email = `${barcode}@member.pmsa`
+    const email = `${barcode}@member.wcsu`
     const password = barcode.padEnd(6, '0') // You could use a more secure password scheme
 
     // Step 1: Create Supabase Auth user

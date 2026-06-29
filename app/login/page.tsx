@@ -124,7 +124,7 @@ export default function LoginPage() {
             <div className="max-w-md space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-text-grey">
                 <Library size={16} className="text-dark-green" />
-                PMSA Library Access
+                Campus Library Access
               </div>
 
               <div className="space-y-4">
@@ -182,7 +182,7 @@ export default function LoginPage() {
 
                 <div className="text-right">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sub-heading-text-grey">
-                    PMSA Library
+                    Campus Library
                   </p>
                 </div>
               </div>

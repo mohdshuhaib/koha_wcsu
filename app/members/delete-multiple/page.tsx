@@ -137,7 +137,7 @@ export default function DeleteMultipleMembers() {
     // 2. Delete auth users one by one
     let authFailures = 0;
     for (const member of membersToDelete) {
-      const deleted = await deleteAuthUserByEmail(`${member.barcode.toLowerCase()}@member.pmsa`)
+      const deleted = await deleteAuthUserByEmail(`${member.barcode.toLowerCase()}@member.wcsu`)
       if (!deleted) {
         authFailures++;
       }

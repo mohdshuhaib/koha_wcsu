@@ -59,7 +59,7 @@ export default function DeleteMemberPage() {
     }
 
     // After successful DB deletion, delete the auth user
-    const authUserDeleted = await deleteAuthUserByEmail(`${barcode.toLowerCase()}@member.pmsa`)
+    const authUserDeleted = await deleteAuthUserByEmail(`${barcode.toLowerCase()}@member.wcsu`)
 
     if (authUserDeleted) {
       setFeedback({ type: 'success', message: `Successfully deleted "${memberToDelete.name}", their records, and their login account.` })

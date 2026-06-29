@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
       // Create auth user
       const { data: user, error: userError } = await supabaseAdmin.auth.admin.createUser({
-        email: `${barcode}@member.pmsa`,
+        email: `${barcode}@member.wcsu`,
         password: barcode.padEnd(6, '0'),
         email_confirm: true
       })

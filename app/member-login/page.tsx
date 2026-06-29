@@ -44,7 +44,7 @@ export default function MemberLogin() {
     setLoading(true)
 
     const paddedPassword = barcode.padEnd(6, '0')
-    const email = `${barcode.toLowerCase()}@member.pmsa`
+    const email = `${barcode.toLowerCase()}@member.wcsu`
 
     const { error: loginError } = await supabase.auth.signInWithPassword({
       email,
@@ -130,7 +130,7 @@ export default function MemberLogin() {
 
                 <div className="text-right">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sub-heading-text-grey">
-                    PMSA Library
+                    Campus Library
                   </p>
                 </div>
               </div>

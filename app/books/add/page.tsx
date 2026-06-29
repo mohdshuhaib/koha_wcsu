@@ -17,6 +17,7 @@ export default function AddBookPage() {
     shelf_location: '',
     call_number: '',
     barcode: '',
+    pages: '',
     status: 'available',
   })
   const [error, setError] = useState('')
@@ -50,14 +51,19 @@ export default function AddBookPage() {
     setSuccess('')
     setLoading(true)
 
-    const { error } = await supabase.from('books').insert([formData])
+    const bookToInsert = {
+      ...formData,
+      pages: formData.pages.trim() ? Number(formData.pages) : null,
+    }
+
+    const { error } = await supabase.from('books').insert([bookToInsert])
     if (error) {
       setError(`Failed to add book: ${error.message}`)
     } else {
       setSuccess(`Successfully added "${formData.title}" to the catalog!`)
       setFormData({
         title: '', author: '', language: '', shelf_location: '',
-        call_number: '', barcode: '', status: 'available',
+        call_number: '', barcode: '', pages: '', status: 'available',
       })
     }
     setLoading(false)
@@ -129,6 +135,11 @@ export default function AddBookPage() {
               <div className="md:col-span-2">
                 <label htmlFor="barcode" className="block text-sm font-semibold text-text-grey mb-1">Barcode</label>
                 <input id="barcode" name="barcode" value={formData.barcode} onChange={handleChange} required className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="pages" className="block text-sm font-semibold text-text-grey mb-1">Pages <span className="font-normal">(optional)</span></label>
+                <input id="pages" name="pages" type="number" min="1" placeholder="Leave empty if not known" value={formData.pages} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
               </div>
 
                {/* Status is preset, so it can be a hidden field or removed if always 'available' on add */}

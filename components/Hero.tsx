@@ -35,7 +35,7 @@ export default function Hero() {
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-600"></span>
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600 sm:text-xs">
-                    PMSA Wafy College
+                    Wafy Campus Kalikkavu
                   </span>
                 </div>
               </div>
@@ -47,7 +47,7 @@ export default function Hero() {
                   </span>
                   <br />
                   <span className="bg-gradient-to-r from-dark-green to-icon-green bg-clip-text text-transparent">
-                    PMSA Library
+                    Campus Library
                   </span>
                 </h1>
               </div>
@@ -97,18 +97,6 @@ export default function Hero() {
                       </span>
                     </span>
                   </Link>
-
-                  <a
-                    href="https://t.me/librarypmsa"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl bg-white/60 px-4 py-2.5 text-xs text-text-grey transition hover:bg-white/80 sm:text-sm"
-                  >
-                    <Send size={16} className="text-blue-500" />
-                    <span>
-                      Join our <span className="font-semibold text-blue-600">Telegram group</span>
-                    </span>
-                  </a>
                 </div>
 
                 <div className="pt-1 text-center text-[9px] uppercase tracking-[0.22em] text-gray-400 sm:text-[10px]">

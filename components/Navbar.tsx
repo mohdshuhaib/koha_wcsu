@@ -151,7 +151,7 @@ export default function Navbar() {
               <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-dark-green text-white">
                 <LibraryBig size={19} />
               </span>
-              <span className="truncate">PMSA Library</span>
+              <span className="truncate">Campus Library</span>
             </Link>
 
             <div className="hidden items-center gap-1 lg:gap-2 md:flex">

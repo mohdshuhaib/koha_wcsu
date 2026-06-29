@@ -18,6 +18,12 @@ export default function BulkUploadPage() {
 
   const router = useRouter()
 
+  const parseOptionalPages = (value: unknown) => {
+    if (value === undefined || value === null || value === '') return null
+    const pages = Number(value)
+    return Number.isFinite(pages) && pages > 0 ? pages : null
+  }
+
   // --- Authentication Logic (Unchanged) ---
   useEffect(() => {
     const checkAuth = async () => {
@@ -54,6 +60,7 @@ export default function BulkUploadPage() {
         shelf_location: row.shelf_location || '',
         call_number: row.call_number || '',
         barcode: row.barcode?.toString() || '',
+        pages: parseOptionalPages(row.pages),
         status: row.status || 'available',
       }))
 
@@ -93,7 +100,7 @@ export default function BulkUploadPage() {
   }
 
   const handleDownloadTemplate = () => {
-    const headers = [['title', 'author', 'language', 'shelf_location', 'call_number', 'barcode']];
+    const headers = [['title', 'author', 'language', 'shelf_location', 'call_number', 'barcode', 'pages']];
     const ws = XLSX.utils.aoa_to_sheet(headers);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Books');
@@ -175,13 +182,18 @@ export default function BulkUploadPage() {
                     <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
                   ))}
                 </div>
-                <p>3. Ensure that in the language column use it like this</p>
+                <p>3. The optional column is:</p>
+                <div className="flex flex-wrap gap-2">
+                  <code className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">pages</code>
+                </div>
+                <p>Leave pages empty if the page count is not known.</p>
+                <p>4. Ensure that in the language column use it like this</p>
                 <div className="flex flex-wrap gap-2">
                   {['MAL', 'ENG', 'ARB', 'URD'].map(col => (
                     <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
                   ))}
                 </div>
-                <p>4. Save the file and upload it using the panel on the left.</p>
+                <p>5. Save the file and upload it using the panel on the left.</p>
               </div>
               <button onClick={handleDownloadTemplate} className="w-full mt-6 flex items-center justify-center gap-2 bg-dark-green text-white px-4 py-2.5 rounded-lg font-semibold text-sm hover:bg-icon-green transition">
                 <Download size={16} /> Download Template.xlsx

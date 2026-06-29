@@ -1,6 +1,6 @@
 {
-  "name": "Pmsa Library",
-  "short_name": "PmsaLib",
+  "name": "Campus Library",
+  "short_name": "WcsuLib",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

@@ -31,7 +31,7 @@ export default function DeleteAllMembers() {
 
     // 4. Delete auth users
     for (const m of members) {
-      await deleteAuthUserByEmail(`${m.barcode.toLowerCase()}@member.pmsa`)
+      await deleteAuthUserByEmail(`${m.barcode.toLowerCase()}@member.wcsu`)
     }
 
     setMessage('All members, borrow records, and user accounts deleted.')
