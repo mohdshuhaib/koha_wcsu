@@ -49,7 +49,14 @@ export default function BulkUploadMembers() {
       skipEmptyLines: true,
       complete: async (results) => {
         const rows = results.data as MemberRow[]
-        const validRows = rows.filter(r => r.name && r.category && r.barcode && r.batch)
+        const validRows = rows
+          .filter(r => r.name && r.category && r.barcode && r.batch)
+          .map((row) => ({
+            name: row.name.trim(),
+            category: row.category.trim().toLowerCase() === 'outsider' ? 'outside' : row.category.trim().toLowerCase(),
+            barcode: row.barcode.trim().toUpperCase(),
+            batch: row.batch.trim(),
+          }))
 
         if (validRows.length === 0) {
           setUploadResult({ type: 'error', message: 'No valid rows found in the file. Please check the column headers and data.' })
@@ -57,14 +64,24 @@ export default function BulkUploadMembers() {
           return
         }
 
-        // Simplified: Insert directly using the Supabase client library
-        const { error } = await supabase.from('members').insert(validRows)
+        const response = await fetch('/api/bulk-create-members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(validRows),
+        })
 
-        if (error) {
-          setUploadResult({ type: 'error', message: `Upload failed: ${error.message}` })
+        const result = await response.json()
+
+        if (!response.ok || !result.success) {
+          setUploadResult({ type: 'error', message: `Upload failed: ${result.error || 'Please try again.'}` })
         } else {
-          setUploadResult({ type: 'success', message: `${validRows.length} patrons were uploaded successfully!` })
-          setSelectedFile(null) // Clear file on success
+          const failedCount = result.failed?.length || 0
+          const message = failedCount > 0
+            ? `${result.addedCount} patrons were uploaded with login accounts. ${failedCount} row(s) failed.`
+            : `${result.addedCount} patrons were uploaded successfully with login accounts!`
+
+          setUploadResult({ type: failedCount > 0 ? 'error' : 'success', message })
+          if (failedCount === 0) setSelectedFile(null) // Clear file on success
         }
         setLoading(false)
       },
@@ -185,7 +202,7 @@ export default function BulkUploadMembers() {
                 </div>
                 <p>3. Ensure the categories should be as given below (don't use capital letters)</p>
                 <div className="flex flex-wrap gap-2">
-                  {['student', 'teacher', 'class', 'outsider'].map(col => (
+                  {['student', 'teacher', 'class', 'outside'].map(col => (
                     <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
                   ))}
                 </div>
