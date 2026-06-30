@@ -51,53 +51,76 @@ export default function MemberDashboard() {
   const router = useRouter()
 
   useEffect(() => {
+    let isMounted = true
+
     const fetchData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser()
 
-      if (!user) {
-        router.push('/member-login')
-        return
+        if (userError) throw userError
+
+        if (!user) {
+          router.push('/member-login')
+          return
+        }
+
+        const barcode = user.email?.split('@')[0]?.trim().toUpperCase() || ''
+        if (!barcode) {
+          throw new Error('Your login account does not have a valid member barcode.')
+        }
+
+        const { data: memberData, error: memberError } = await supabase
+          .from('members')
+          .select('id, name')
+          .eq('barcode', barcode)
+          .maybeSingle()
+
+        if (memberError) throw memberError
+
+        if (!memberData) {
+          throw new Error('Could not find your member profile. Please contact the librarian.')
+        }
+
+        const { data: records, error: recordsError } = await supabase
+          .from('borrow_records')
+          .select('*, books(title)')
+          .eq('member_id', memberData.id)
+          .order('borrow_date', { ascending: false })
+
+        if (recordsError) throw recordsError
+
+        const returnedHistory = records?.filter((r) => r.return_date !== null) || []
+        const currentlyBorrowed = records?.filter((r) => r.return_date === null) || []
+        const pendingFines = currentlyBorrowed.reduce(
+          (acc, r) => acc + (r.fine_paid ? 0 : r.fine || 0),
+          0
+        )
+
+        if (!isMounted) return
+
+        setMember({
+          name: memberData.name,
+          booksRead: returnedHistory.length,
+          pendingFines,
+          currentlyBorrowed,
+          returnedHistory,
+        })
+      } catch (err: any) {
+        if (!isMounted) return
+        setError(err.message || 'Could not load your member dashboard.')
+      } finally {
+        if (isMounted) setLoading(false)
       }
-
-      const barcode = user.email?.split('@')[0] || ''
-      const { data: memberData, error: memberError } = await supabase
-        .from('members')
-        .select('id, name')
-        .eq('barcode', barcode.toUpperCase())
-        .single()
-
-      if (memberError || !memberData) {
-        setError('Could not find your member profile.')
-        setLoading(false)
-        return
-      }
-
-      const { data: records } = await supabase
-        .from('borrow_records')
-        .select('*, books(title)')
-        .eq('member_id', memberData.id)
-        .order('borrow_date', { ascending: false })
-
-      const returnedHistory = records?.filter((r) => r.return_date !== null) || []
-      const currentlyBorrowed = records?.filter((r) => r.return_date === null) || []
-      const pendingFines = currentlyBorrowed.reduce(
-        (acc, r) => acc + (r.fine_paid ? 0 : r.fine || 0),
-        0
-      )
-
-      setMember({
-        name: memberData.name,
-        booksRead: returnedHistory.length,
-        pendingFines,
-        currentlyBorrowed,
-        returnedHistory,
-      })
-      setLoading(false)
     }
 
     fetchData()
+
+    return () => {
+      isMounted = false
+    }
   }, [router])
 
   const handleLogout = async () => {
