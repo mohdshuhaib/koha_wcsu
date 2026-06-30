@@ -17,8 +17,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const email = `${barcode}@member.wcsu`
-    const password = barcode.padEnd(6, '0') // You could use a more secure password scheme
+    const normalizedBarcode = String(barcode).trim().toUpperCase()
+    const normalizedName = String(name).trim()
+    const normalizedBatch = String(batch).trim()
+    const email = `${normalizedBarcode.toLowerCase()}@member.wcsu`
+    const password = normalizedBarcode.padEnd(6, '0') // You could use a more secure password scheme
+
+    const { data: existingMember, error: existingMemberError } = await supabase
+      .from('members')
+      .select('id')
+      .eq('barcode', normalizedBarcode)
+      .maybeSingle()
+
+    if (existingMemberError) {
+      console.error('Existing member lookup error:', existingMemberError.message)
+      return NextResponse.json({ error: existingMemberError.message }, { status: 500 })
+    }
 
     // Step 1: Create Supabase Auth user
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
@@ -32,16 +46,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400 })
     }
 
-    // Step 2: Insert into `members` table
-    const { error: dbError } = await supabase.from('members').insert([
-      {
-        id: authUser.user.id,
-        name,
-        barcode,
-        category,
-        batch,
-      }
-    ])
+    const memberPayload = {
+      id: authUser.user.id,
+      name: normalizedName,
+      barcode: normalizedBarcode,
+      category,
+      batch: normalizedBatch,
+    }
+
+    // Step 2: Insert into `members` table, or repair an existing member row
+    // that was created before login accounts were generated.
+    const { error: dbError } = existingMember
+      ? await supabase.from('members').update(memberPayload).eq('id', existingMember.id)
+      : await supabase.from('members').insert([memberPayload])
 
     if (dbError) {
       console.error('DB error:', dbError.message)

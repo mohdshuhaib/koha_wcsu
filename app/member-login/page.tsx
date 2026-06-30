@@ -43,8 +43,9 @@ export default function MemberLogin() {
     setError('')
     setLoading(true)
 
-    const paddedPassword = barcode.padEnd(6, '0')
-    const email = `${barcode.toLowerCase()}@member.wcsu`
+    const normalizedBarcode = barcode.trim().toUpperCase()
+    const paddedPassword = normalizedBarcode.padEnd(6, '0')
+    const email = `${normalizedBarcode.toLowerCase()}@member.wcsu`
 
     const { error: loginError } = await supabase.auth.signInWithPassword({
       email,

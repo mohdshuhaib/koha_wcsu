@@ -46,13 +46,25 @@ export default function AddMemberPage() {
     setFeedback(null)
     setLoading(true)
 
-    // Simplified: Call Supabase directly from the client
-    const { error } = await supabase.from('members').insert([formData])
+    const normalizedData = {
+      ...formData,
+      barcode: formData.barcode.trim().toUpperCase(),
+      name: formData.name.trim(),
+      batch: formData.batch.trim(),
+    }
 
-    if (error) {
-      setFeedback({ type: 'error', message: `Failed to add patron: ${error.message}` })
+    const response = await fetch('/api/create-member', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(normalizedData),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setFeedback({ type: 'error', message: `Failed to add patron: ${result.error || 'Please try again.'}` })
     } else {
-      setFeedback({ type: 'success', message: `Successfully added "${formData.name}" to the library.` })
+      setFeedback({ type: 'success', message: `Successfully added "${normalizedData.name}" to the library. They can now log in with barcode ${normalizedData.barcode}.` })
       // Reset form on success
       setFormData({ name: '', batch: '', barcode: '', category: '' })
     }
