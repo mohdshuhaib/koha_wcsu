@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { sendLibraryNotification } from '@/lib/notification-events-client'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
@@ -56,6 +57,7 @@ type ActiveReturnRecord = {
   book: {
     id: string
     title: string
+    author: string | null
     barcode: string
     pages: number | null
   }
@@ -432,7 +434,7 @@ export default function CheckInForm() {
 
     const { data: book, error: bookError } = await supabase
       .from('books')
-      .select('id, title, barcode, pages')
+      .select('id, title, author, barcode, pages')
       .eq('barcode', barcode.trim())
       .single()
 
@@ -547,6 +549,13 @@ export default function CheckInForm() {
     }
 
     setMessage(successMessage)
+    void sendLibraryNotification({
+      type: 'checkin',
+      memberId: activeRecord.member.id,
+      bookTitle: activeRecord.book.title,
+      authorName: activeRecord.book.author,
+      checkinDate: returnDateISO,
+    })
     setIsError(false)
     resetProcess(true)
   }

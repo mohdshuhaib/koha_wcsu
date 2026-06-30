@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { sendLibraryNotification } from '@/lib/notification-events-client'
 import Loading from '../loading'
 import dayjs from 'dayjs'
 import {
@@ -17,7 +18,7 @@ type FineRecord = {
   paid_amount: number
   return_date: string | null
   fine_paid: boolean
-  member: { name: string; batch: string }
+  member: { id: string; name: string; batch: string }
   book: { title: string }
 }
 
@@ -90,7 +91,7 @@ export default function FinesPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('borrow_records')
-      .select('id, fine, paid_amount, return_date, fine_paid, member:member_id(name, batch), book:book_id(title)')
+      .select('id, fine, paid_amount, return_date, fine_paid, member:member_id(id, name, batch), book:book_id(title)')
       .eq('fine_paid', false)
       .gt('fine', 0)
 
@@ -204,6 +205,12 @@ export default function FinesPage() {
     if (updateError) {
       alert('Failed to update fine record.')
     } else {
+      void sendLibraryNotification({
+        type: 'fine_payment',
+        memberId: currentFine.member.id,
+        paidAmount: amountToPay,
+        totalFine: currentFine.fine,
+      })
       fetchFines()
       fetchFinancialStats()
     }

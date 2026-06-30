@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { sendLibraryNotification } from '@/lib/notification-events-client'
 import dayjs from 'dayjs'
 import {
   User,
@@ -25,6 +26,7 @@ import BarcodeScannerModal from '@/components/BarcodeScannerModal'
 type HeldInfo = {
   bookId: string
   bookTitle: string
+  authorName?: string | null
   holdId: string
   heldForMemberName: string
   holdPolicy: 'strict' | 'flexible'
@@ -271,7 +273,7 @@ export default function CheckOutForm() {
   const proceedWithBookChecks = async (member: any) => {
     const { data: book, error: bookError } = await supabase
       .from('books')
-      .select('id, title, status')
+      .select('id, title, author, status')
       .eq('barcode', bookBarcode)
       .or('status.eq.available,status.eq.held')
       .single()
@@ -301,6 +303,7 @@ export default function CheckOutForm() {
           setHeldInfo({
             bookId: book.id,
             bookTitle: book.title,
+            authorName: book.author,
             holdId: holdRecord.id,
             heldForMemberName: memberName,
             holdPolicy: holdRecord.hold_policy ?? 'strict',
@@ -312,7 +315,7 @@ export default function CheckOutForm() {
       }
     }
 
-    await finalizeCheckout(book.id, book.title, member)
+    await finalizeCheckout(book.id, book.title, book.author, member)
   }
 
   const handleSkipFine = () => {
@@ -323,7 +326,7 @@ export default function CheckOutForm() {
     }
   }
 
-  const finalizeCheckout = async (bookId: string, bookTitle: string, member: any) => {
+  const finalizeCheckout = async (bookId: string, bookTitle: string, authorName: string | null, member: any) => {
     const dueDate = getDueDate(member.category)
 
     const { error: rpcError } = await supabase.rpc('checkout_book', {
@@ -343,6 +346,14 @@ export default function CheckOutForm() {
     setMessage(
       `"${bookTitle}" issued to ${member.name}. Return by ${dayjs(dueDate).format('DD MMM YYYY')}.`
     )
+    void sendLibraryNotification({
+      type: 'checkout',
+      memberId: member.id,
+      bookTitle,
+      authorName,
+      checkoutDate: dayjs().format('YYYY-MM-DD'),
+      dueDate,
+    })
     setIsError(false)
     resetAfterSuccess()
   }
@@ -389,6 +400,14 @@ export default function CheckOutForm() {
     setMessage(
       `Held book "${heldInfo.bookTitle}" issued to ${member.name}. Return by ${dayjs(dueDate).format('DD MMM YYYY')}.`
     )
+    void sendLibraryNotification({
+      type: 'checkout',
+      memberId: member.id,
+      bookTitle: heldInfo.bookTitle,
+      authorName: heldInfo.authorName,
+      checkoutDate: dayjs().format('YYYY-MM-DD'),
+      dueDate,
+    })
     setIsError(false)
     resetAfterSuccess()
   }

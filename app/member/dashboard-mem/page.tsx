@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Loading from '@/app/loading'
+import NotificationSettings from '@/components/NotificationSettings'
 import dayjs from 'dayjs'
 import {
   BookOpen,
@@ -186,6 +187,8 @@ export default function MemberDashboard() {
             </div>
 
             <div className="flex flex-col gap-4">
+              <NotificationSettings />
+
               <div className="rounded-[1.5rem] border border-primary-dark-grey bg-primary-grey/70 p-4 sm:p-5">
                 <div className="flex items-start gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-dark-green shadow-sm">
