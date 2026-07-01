@@ -68,19 +68,19 @@ export const SORT_OPTIONS = [
 export const CATALOG_LINKS = [
   {
     label: 'Malayalam Books Catalogue',
-    url: 'https://docs.google.com/spreadsheets/d/1jiRgNlI2KA3izFDlCtU2QsgA16TTHWGg/edit?usp=sharing&ouid=117568178670405218141&rtpof=true&sd=true',
+    url: 'https://docs.google.com/spreadsheets/d/1kA9HfMhkLo9n-Vsa-xstVD6NtS9V8mRg/edit?usp=sharing&ouid=117954835367113518356&rtpof=true&sd=true',
   },
   {
     label: 'English Books Catalogue',
-    url: 'https://docs.google.com/spreadsheets/d/1f-m278RZ6ImPeFVrdtd1bGBmnOPjRibs/edit?usp=sharing&ouid=117568178670405218141&rtpof=true&sd=true',
+    url: 'https://docs.google.com/spreadsheets/d/1DHq4BNL7B2FJTCeifCpfPot4cUl3Dujt/edit?usp=sharing&ouid=117954835367113518356&rtpof=true&sd=true',
   },
   {
     label: 'Arabic Books Catalogue',
-    url: 'https://docs.google.com/spreadsheets/d/1tQnq5l_IKPhWNuFOwtBhR7NzU-lPG2Cv/edit?usp=sharing&ouid=117568178670405218141&rtpof=true&sd=true',
+    url: 'https://docs.google.com/spreadsheets/d/12gFZd5azgsYGcdggDIqXawpkiq-_FkLY/edit?usp=sharing&ouid=117954835367113518356&rtpof=true&sd=true',
   },
   {
     label: 'Urdu Books Catalogue',
-    url: 'https://docs.google.com/spreadsheets/d/1-3RcD-qkBRKWW-bwXZ4fJppow9Q4Cw13/edit?usp=sharing&ouid=117568178670405218141&rtpof=true&sd=true',
+    url: 'https://docs.google.com/spreadsheets/d/1Gz37omJvELr2pfRGZn69vcbO13fI9vEc/edit?usp=sharing&ouid=117954835367113518356&rtpof=true&sd=true',
   },
 ]
 
