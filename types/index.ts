@@ -30,6 +30,9 @@ export type HistoryRecord = {
   fine: number
   fine_paid: boolean
   member_id: string
+  checkout_by_name?: string | null
+  checkin_by_name?: string | null
+  renewal_by_name?: string | null
   members: { name: string; batch: string } | null
   books: Book | null
 }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { sendLibraryNotification } from '@/lib/notification-events-client'
+import { getCurrentStaffUser, StaffUser } from '@/lib/staff-user'
 import dayjs from 'dayjs'
 import {
   User,
@@ -88,6 +89,7 @@ export default function CheckOutForm() {
 
   const [isMemberScannerOpen, setIsMemberScannerOpen] = useState(false)
   const [isBookScannerOpen, setIsBookScannerOpen] = useState(false)
+  const [staffUser, setStaffUser] = useState<StaffUser | null>(null)
 
   const memberInputRef = useRef<HTMLInputElement>(null)
   const bookInputRef = useRef<HTMLInputElement>(null)
@@ -103,6 +105,7 @@ export default function CheckOutForm() {
 
   useEffect(() => {
     memberInputRef.current?.focus()
+    void getCurrentStaffUser().then(setStaffUser)
   }, [])
 
   useEffect(() => {
@@ -343,6 +346,18 @@ export default function CheckOutForm() {
       return
     }
 
+    if (staffUser) {
+      await supabase
+        .from('borrow_records')
+        .update({
+          checkout_by_id: staffUser.id,
+          checkout_by_name: staffUser.displayName,
+        })
+        .eq('book_id', bookId)
+        .eq('member_id', member.id)
+        .is('return_date', null)
+    }
+
     setMessage(
       `"${bookTitle}" issued to ${member.name}. Return by ${dayjs(dueDate).format('DD MMM YYYY')}.`
     )
@@ -395,6 +410,18 @@ export default function CheckOutForm() {
       setIsError(true)
       setLoading(false)
       return
+    }
+
+    if (staffUser) {
+      await supabase
+        .from('borrow_records')
+        .update({
+          checkout_by_id: staffUser.id,
+          checkout_by_name: staffUser.displayName,
+        })
+        .eq('book_id', heldInfo.bookId)
+        .eq('member_id', member.id)
+        .is('return_date', null)
     }
 
     setMessage(

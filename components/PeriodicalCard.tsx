@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { useEffect, useState, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getCurrentStaffUser, StaffUser } from '@/lib/staff-user'
 import dayjs from 'dayjs'
 import { Periodical, PeriodicalRecord } from '../app/periodicals/page'
 import { ChevronDown, ChevronUp, Edit, Trash2, AlertTriangle, X } from 'lucide-react'
@@ -12,6 +13,7 @@ type Props = {
   records: PeriodicalRecord[];
   onUpdate: () => void;
   onEdit: () => void;
+  onDelete: (periodical: Periodical) => void;
 }
 
 // --- Reusable Confirmation Modal ---
@@ -34,15 +36,20 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }: { isO
     )
 }
 
-export default function PeriodicalCard({ periodical, records, onUpdate, onEdit }: Props) {
+export default function PeriodicalCard({ periodical, records, onUpdate, onEdit, onDelete }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [borrowerName, setBorrowerName] = useState('')
   const [issueIdentifier, setIssueIdentifier] = useState('')
   const [borrowDate, setBorrowDate] = useState(dayjs().format('YYYY-MM-DD'))
   const [isAddingRecord, setIsAddingRecord] = useState(false) // State to disable add button
+  const [staffUser, setStaffUser] = useState<StaffUser | null>(null)
 
   // State for managing which delete modal is open
   const [modalState, setModalState] = useState<{ type: 'single' | 'all'; recordId?: string } | null>(null)
+
+  useEffect(() => {
+    void getCurrentStaffUser().then(setStaffUser)
+  }, [])
 
   const handleAddRecord = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,6 +61,8 @@ export default function PeriodicalCard({ periodical, records, onUpdate, onEdit }
       borrower_name: borrowerName,
       issue_identifier: issueIdentifier,
       borrow_date: borrowDate,
+      created_by_id: staffUser?.id || null,
+      created_by_name: staffUser?.displayName || null,
     })
     if (error) console.error(error)
     else {
@@ -65,7 +74,11 @@ export default function PeriodicalCard({ periodical, records, onUpdate, onEdit }
   }
 
   const handleReturn = async (recordId: string) => {
-    const { error } = await supabase.from('periodical_records').update({ return_date: new Date().toISOString() }).eq('id', recordId)
+    const { error } = await supabase.from('periodical_records').update({
+      return_date: new Date().toISOString(),
+      returned_by_id: staffUser?.id || null,
+      returned_by_name: staffUser?.displayName || null,
+    }).eq('id', recordId)
     if (error) console.error(error)
     else onUpdate()
   }
@@ -96,6 +109,7 @@ export default function PeriodicalCard({ periodical, records, onUpdate, onEdit }
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={onEdit} className="p-2 text-text-grey hover:bg-primary-dark-grey rounded-full transition"><Edit size={16} /></button>
+            <button onClick={() => onDelete(periodical)} className="p-2 text-red-500 hover:bg-red-100 rounded-full transition" title="Delete periodical"><Trash2 size={16} /></button>
             <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-text-grey hover:bg-primary-dark-grey rounded-full transition">
               {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
@@ -117,7 +131,11 @@ export default function PeriodicalCard({ periodical, records, onUpdate, onEdit }
               {records.map(record => (
                 <div key={record.id} className="grid grid-cols-4 gap-2 items-center text-sm p-2 rounded-md hover:bg-primary-grey">
                   <p className="text-text-grey">{dayjs(record.borrow_date).format('DD MMM YYYY')}</p>
-                  <p className="text-text-grey">{record.issue_identifier}</p>
+                  <div>
+                    <p className="text-text-grey">{record.issue_identifier}</p>
+                    {record.created_by_name && <p className="text-[11px] text-text-grey">Added by {record.created_by_name}</p>}
+                    {record.returned_by_name && <p className="text-[11px] text-green-700">Returned by {record.returned_by_name}</p>}
+                  </div>
                   <p className="font-semibold text-heading-text-black">{record.borrower_name}</p>
                   <div className="flex gap-2 justify-end">
                     <button

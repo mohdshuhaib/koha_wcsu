@@ -81,6 +81,7 @@ export default function HistoryTable({ records, onDelete, onMemberClick }: Props
               <th className="p-3 text-left font-semibold">Borrowed</th>
               <th className="p-3 text-left font-semibold">Due</th>
               <th className="p-3 text-left font-semibold">Status</th>
+              <th className="p-3 text-left font-semibold">Staff</th>
               <th className="p-3 text-center font-semibold">Action</th>
             </tr>
           </thead>
@@ -106,6 +107,11 @@ export default function HistoryTable({ records, onDelete, onMemberClick }: Props
                     ) : (
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">Borrowed</span>
                     )}
+                </td>
+                <td className="p-3 text-xs text-text-grey">
+                  <div><strong>Out:</strong> {r.checkout_by_name || '-'}</div>
+                  {r.return_date && <div><strong>In:</strong> {r.checkin_by_name || '-'}</div>}
+                  {r.renewal_by_name && <div><strong>Renew:</strong> {r.renewal_by_name}</div>}
                 </td>
                 <td className="p-3 text-center">
                   <button onClick={() => onDelete(r)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition"><Trash2 size={16}/></button>

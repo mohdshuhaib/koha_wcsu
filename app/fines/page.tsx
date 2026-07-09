@@ -4,10 +4,11 @@ import { useEffect, useState, useMemo, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { sendLibraryNotification } from '@/lib/notification-events-client'
+import { getCurrentStaffUser, StaffUser } from '@/lib/staff-user'
 import Loading from '../loading'
 import dayjs from 'dayjs'
 import {
-  IndianRupee, Users, History, Printer, CreditCard, Eraser, X, AlertTriangle, Plus, Wallet, TrendingDown
+  IndianRupee, Users, History, Printer, CreditCard, Eraser, X, AlertTriangle, Wallet, TrendingDown
 } from 'lucide-react'
 import clsx from 'classnames'
 
@@ -22,14 +23,10 @@ type FineRecord = {
   book: { title: string }
 }
 
-type Librarian = {
-  id: number
-  name: string
-}
-
 // Expanded type to include nested borrow_record data for calculations
 type PaymentRecord = {
   amount_paid: number
+  librarian_id?: string | null
   librarian_name: string | null
   notes: string | null
   borrow_record?: {
@@ -51,9 +48,7 @@ export default function FinesPage() {
   const [totalWaived, setTotalWaived] = useState(0)
   const [totalOutstanding, setTotalOutstanding] = useState(0)
 
-  // Librarian State
-  const [librarians, setLibrarians] = useState<Librarian[]>([])
-  const [selectedLibrarian, setSelectedLibrarian] = useState('')
+  const [staffUser, setStaffUser] = useState<StaffUser | null>(null)
   const [allPayments, setAllPayments] = useState<PaymentRecord[]>([])
 
   const [modalState, setModalState] = useState<{ type: 'payment' | 'history' | 'writeOff' | null; data: any }>({ type: null, data: null })
@@ -72,6 +67,12 @@ export default function FinesPage() {
       if (!session) {
         router.push('/login')
       } else {
+        const role = session.user.user_metadata?.role
+        if (role !== 'librarian' && role !== 'admin') {
+          router.push('/login')
+          return
+        }
+        setStaffUser(await getCurrentStaffUser())
         setIsLoggedIn(true)
       }
       setCheckingSession(false)
@@ -83,7 +84,6 @@ export default function FinesPage() {
     if (isLoggedIn) {
       fetchFines()
       fetchFinancialStats()
-      fetchLibrarians()
     }
   }, [isLoggedIn])
 
@@ -98,11 +98,6 @@ export default function FinesPage() {
     if (error) console.error(error)
     else setFines(data as any)
     setLoading(false)
-  }
-
-  const fetchLibrarians = async () => {
-    const { data } = await supabase.from('librarians').select('*').order('name')
-    if (data) setLibrarians(data)
   }
 
   const fetchFinancialStats = async () => {
@@ -126,6 +121,7 @@ export default function FinesPage() {
         .select(`
             amount_paid,
             notes,
+            librarian_id,
             librarian_name,
             borrow_record:borrow_records!inner(fine, paid_amount)
         `)
@@ -152,19 +148,9 @@ export default function FinesPage() {
     }
   }
 
-  const handleAddLibrarian = async (name: string) => {
-    if (!name.trim()) return
-    const { data, error } = await supabase.from('librarians').insert({ name: name.trim() }).select().single()
-    if (!error && data) {
-        setLibrarians([...librarians, data])
-        setSelectedLibrarian(data.name)
-    }
-  }
-
   const handleProcessPayment = async () => {
     const currentFine = modalState.data;
-    if (!currentFine || !paymentAmount || !selectedLibrarian) {
-        if(!selectedLibrarian) alert("Please select a librarian.")
+    if (!currentFine || !paymentAmount || !staffUser) {
         return
     }
 
@@ -182,7 +168,8 @@ export default function FinesPage() {
           borrow_record_id: currentFine.id,
           amount_paid: amountToPay,
           notes: 'Standard Payment',
-          librarian_name: selectedLibrarian
+          librarian_id: staffUser.id,
+          librarian_name: staffUser.displayName,
       })
 
     if (logError) {
@@ -220,9 +207,8 @@ export default function FinesPage() {
 
   const handleWriteOff = async () => {
     const fineRecord = modalState.data;
-    if (!fineRecord || !writeOffReason.trim() || !selectedLibrarian) {
-        if(!selectedLibrarian) alert("Please select a librarian.")
-        else alert('Please provide a reason for writing off the fine.');
+    if (!fineRecord || !writeOffReason.trim() || !staffUser) {
+        alert('Please provide a reason for writing off the fine.');
         return;
     }
 
@@ -232,7 +218,8 @@ export default function FinesPage() {
             borrow_record_id: fineRecord.id,
             amount_paid: 0,
             notes: `Write-Off: ${writeOffReason}`,
-            librarian_name: selectedLibrarian
+            librarian_id: staffUser.id,
+            librarian_name: staffUser.displayName,
         });
 
     if (logError) {
@@ -409,10 +396,7 @@ export default function FinesPage() {
                 setAmount={setPaymentAmount}
                 onConfirm={handleProcessPayment}
                 onClose={() => setModalState({ type: null, data: null })}
-                librarians={librarians}
-                selectedLibrarian={selectedLibrarian}
-                setSelectedLibrarian={setSelectedLibrarian}
-                onAddLibrarian={handleAddLibrarian}
+                staffUser={staffUser}
                 allPayments={allPayments}
             />
         )}
@@ -426,10 +410,7 @@ export default function FinesPage() {
                 setReason={setWriteOffReason}
                 onConfirm={handleWriteOff}
                 onClose={() => setModalState({ type: null, data: null })}
-                librarians={librarians}
-                selectedLibrarian={selectedLibrarian}
-                setSelectedLibrarian={setSelectedLibrarian}
-                onAddLibrarian={handleAddLibrarian}
+                staffUser={staffUser}
                 allPayments={allPayments}
             />
         )}
@@ -684,64 +665,35 @@ function Modal({ isOpen, onClose, children }: { isOpen: boolean; onClose: () => 
   )
 }
 
-// --- Component: Librarian Selector with Stats ---
-function LibrarianSelector({ librarians, selected, onSelect, onAdd, allPayments }: any) {
-    const [isAdding, setIsAdding] = useState(false);
-    const [newName, setNewName] = useState('');
-
-    const handleAdd = () => {
-        onAdd(newName);
-        setIsAdding(false);
-        setNewName('');
-    }
-
+function StaffAttributionBox({ staffUser, allPayments }: { staffUser: StaffUser | null; allPayments: PaymentRecord[] }) {
     const amountOwned = useMemo(() => {
-        if (!selected) return 0;
-        // We only sum actual collections (amount_paid > 0), not write-offs
+        if (!staffUser) return 0;
         return allPayments
-            .filter((p: PaymentRecord) => p.librarian_name === selected && p.amount_paid > 0)
+            .filter((p: PaymentRecord) => {
+              if (p.librarian_id) return p.librarian_id === staffUser.id && p.amount_paid > 0
+              return p.librarian_name === staffUser.displayName && p.amount_paid > 0
+            })
             .reduce((sum: number, p: PaymentRecord) => sum + (p.amount_paid || 0), 0);
-    }, [selected, allPayments]);
+    }, [staffUser, allPayments]);
 
     return (
         <div className="bg-primary-grey p-3 rounded-md border border-primary-dark-grey mb-4">
-            <label className="block text-xs font-bold text-text-grey mb-1 uppercase">Librarian in Charge</label>
-            <div className="flex gap-2">
-                <select
-                    value={selected}
-                    onChange={(e) => onSelect(e.target.value)}
-                    className="flex-1 p-2 text-sm border border-primary-dark-grey rounded-md bg-secondary-white focus:ring-2 focus:ring-dark-green outline-none"
-                >
-                    <option value="">-- Select Name --</option>
-                    {librarians.map((l: any) => <option key={l.id} value={l.name}>{l.name}</option>)}
-                </select>
-                <button onClick={() => setIsAdding(!isAdding)} className="p-2 bg-secondary-white border border-primary-dark-grey rounded-md hover:bg-primary-dark-grey text-heading-text-black"><Plus size={18}/></button>
+            <label className="block text-xs font-bold text-text-grey mb-1 uppercase">Staff in Charge</label>
+            <div className="rounded-md border border-primary-dark-grey bg-secondary-white p-3">
+                <p className="font-bold text-heading-text-black">{staffUser?.displayName || 'Current staff'}</p>
+                <p className="text-xs text-text-grey">{staffUser?.email || '-'}</p>
             </div>
 
-            {isAdding && (
-                <div className="flex gap-2 mt-2 animate-in fade-in slide-in-from-top-2">
-                    <input
-                        type="text"
-                        placeholder="New Librarian Name"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        className="flex-1 p-2 text-sm border border-primary-dark-grey rounded-md"
-                    />
-                    <button onClick={handleAdd} className="px-3 py-1 bg-dark-green text-white text-xs rounded-md">Add</button>
-                </div>
-            )}
-
-            {selected && (
+            {staffUser && (
                 <div className="mt-2 flex justify-between items-center text-sm bg-green-50 p-2 rounded border border-green-200">
-                    <span className="text-green-800">Total Collected by {selected}:</span>
-                    <span className="font-bold text-green-900 text-lg">₹{amountOwned}</span>
+                    <span className="text-green-800">Total Collected by {staffUser.displayName}:</span>
+                    <span className="font-bold text-green-900 text-lg">?{amountOwned}</span>
                 </div>
             )}
         </div>
     )
 }
-
-function PaymentContent({ fine, amount, setAmount, onConfirm, onClose, librarians, selectedLibrarian, setSelectedLibrarian, onAddLibrarian, allPayments }: any) {
+function PaymentContent({ fine, amount, setAmount, onConfirm, onClose, staffUser, allPayments }: any) {
     const remaining = (fine.fine || 0) - (fine.paid_amount || 0);
     return <>
         <div className="p-4 border-b border-primary-dark-grey flex justify-between items-center"><h2 className="text-lg font-bold font-heading">Record Payment</h2><button onClick={onClose} className="p-1 rounded-full hover:bg-primary-dark-grey"><X size={20}/></button></div>
@@ -757,13 +709,7 @@ function PaymentContent({ fine, amount, setAmount, onConfirm, onClose, librarian
                 </div>
             </div>
 
-            <LibrarianSelector
-                librarians={librarians}
-                selected={selectedLibrarian}
-                onSelect={setSelectedLibrarian}
-                onAdd={onAddLibrarian}
-                allPayments={allPayments}
-            />
+            <StaffAttributionBox staffUser={staffUser} allPayments={allPayments} />
 
             <div>
                 <label className="text-sm font-semibold text-text-grey">Amount to Pay</label>
@@ -774,7 +720,7 @@ function PaymentContent({ fine, amount, setAmount, onConfirm, onClose, librarian
     </>
 }
 
-function WriteOffContent({ fine, reason, setReason, onConfirm, onClose, librarians, selectedLibrarian, setSelectedLibrarian, onAddLibrarian, allPayments }: any) {
+function WriteOffContent({ fine, reason, setReason, onConfirm, onClose, staffUser, allPayments }: any) {
     return <>
         <div className="p-6 text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500" />
@@ -784,13 +730,7 @@ function WriteOffContent({ fine, reason, setReason, onConfirm, onClose, libraria
             </p>
 
             <div className="text-left">
-                 <LibrarianSelector
-                    librarians={librarians}
-                    selected={selectedLibrarian}
-                    onSelect={setSelectedLibrarian}
-                    onAdd={onAddLibrarian}
-                    allPayments={allPayments}
-                />
+                 <StaffAttributionBox staffUser={staffUser} allPayments={allPayments} />
             </div>
 
             <textarea

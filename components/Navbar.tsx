@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Menu, X, ChevronDown, Code, Search, LibraryBig } from 'lucide-react'
+import { Menu, X, ChevronDown, Code, Search, LibraryBig, UserCircle } from 'lucide-react'
 import clsx from 'classnames'
 
 interface NavItemType {
@@ -17,7 +17,8 @@ interface NavItemType {
 export default function Navbar() {
   const pathname = usePathname()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [role, setRole] = useState<'member' | 'librarian' | 'developer' | null>(null)
+  const [role, setRole] = useState<'member' | 'librarian' | 'admin' | 'developer' | null>(null)
+  const [displayName, setDisplayName] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mobileSearch, setMobileSearch] = useState('')
 
@@ -33,16 +34,26 @@ export default function Navbar() {
         setIsLoggedIn(true)
         const rawRole = user.user_metadata?.role
 
+        setDisplayName(
+          user.user_metadata?.display_name ||
+          user.user_metadata?.name ||
+          user.email?.split('@')[0] ||
+          ''
+        )
+
         if (rawRole === 'developer') {
           setRole('developer')
         } else if (rawRole === 'librarian') {
           setRole('librarian')
+        } else if (rawRole === 'admin') {
+          setRole('admin')
         } else {
           setRole('member')
         }
       } else {
         setIsLoggedIn(false)
         setRole(null)
+        setDisplayName('')
       }
     }
 
@@ -91,7 +102,7 @@ export default function Navbar() {
           ]
         : []),
 
-      ...(role === 'librarian'
+      ...(role === 'librarian' || role === 'admin'
         ? [{ href: '/dashboard', label: 'Dashboard' }]
         : []),
 
@@ -100,21 +111,30 @@ export default function Navbar() {
         : []),
     ] : []),
 
-    ...(role === 'librarian'
+    ...(role === 'librarian' || role === 'admin'
       ? [
           { href: '/check', label: 'Check In / Out' },
           {
             label: 'Management',
-            children: [
-              { href: '/books', label: 'Books' },
-              { href: '/members', label: 'Patrons' },
-              { href: '/fines', label: 'Fines' },
-              { href: '/periodicals', label: 'Periodicals' },
-              { href: '/barcode-generator', label: 'Barcode Generator' },
-              { href: '/dev-support', label: 'System Support' },
-            ],
+            children:
+              role === 'librarian'
+                ? [
+                    { href: '/books', label: 'Books' },
+                    { href: '/members', label: 'Patrons' },
+                    { href: '/admins', label: 'Admins' },
+                    { href: '/fines', label: 'Fines' },
+                    { href: '/periodicals', label: 'Periodicals' },
+                    { href: '/barcode-generator', label: 'Barcode Generator' },
+                    { href: '/dev-support', label: 'System Support' },
+                  ]
+                : [
+                    { href: '/admins', label: 'Admins' },
+                    { href: '/fines', label: 'Fines' },
+                    { href: '/periodicals', label: 'Periodicals' },
+                    { href: '/dev-support', label: 'System Support' },
+                  ],
           },
-          { href: '/backup', label: 'Backup' },
+          ...(role === 'librarian' ? [{ href: '/backup', label: 'Backup' }] : []),
           { href: '/history', label: 'Stats' },
         ]
       : []),
@@ -159,7 +179,7 @@ export default function Navbar() {
                 <NavItem key={item.label} item={item} pathname={pathname} />
               ))}
               <div className="ml-2">
-                <AuthButton isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
+                <AuthButton isLoggedIn={isLoggedIn} handleLogout={handleLogout} displayName={displayName} />
               </div>
             </div>
 
@@ -228,6 +248,7 @@ export default function Navbar() {
             <AuthButton
               isLoggedIn={isLoggedIn}
               handleLogout={handleLogout}
+              displayName={displayName}
               isMobile
             />
           </div>
@@ -353,24 +374,66 @@ function NavItem({
 function AuthButton({
   isLoggedIn,
   handleLogout,
+  displayName,
   isMobile = false,
 }: {
   isLoggedIn: boolean
   handleLogout: () => void
+  displayName: string
   isMobile?: boolean
 }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (isMobile || !isOpen) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setIsOpen(false)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [isMobile, isOpen])
+
   if (isLoggedIn) {
     return (
-      <button
-        onClick={handleLogout}
-        className={clsx(
-          'inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition min-h-11',
-          'bg-red-600 text-white hover:bg-red-700',
-          isMobile ? 'w-full' : ''
+      <div ref={ref} className={clsx('relative', isMobile ? 'w-full' : '')}>
+        <button
+          onClick={() => setIsOpen((prev) => !prev)}
+          className={clsx(
+            'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-primary-dark-grey bg-primary-grey px-4 py-3 text-sm font-semibold text-heading-text-black transition hover:bg-primary-dark-grey',
+            isMobile ? 'w-full' : ''
+          )}
+        >
+          <UserCircle size={18} />
+          <span className="max-w-[150px] truncate">{displayName || 'Account'}</span>
+          <ChevronDown size={15} className={clsx('transition-transform', isOpen && 'rotate-180')} />
+        </button>
+
+        {isOpen && (
+          <div
+            className={clsx(
+              'mt-2 space-y-1 rounded-2xl border border-primary-dark-grey bg-secondary-white p-2 shadow-2xl',
+              !isMobile && 'absolute right-0 top-full min-w-[190px]'
+            )}
+          >
+            <Link
+              href="/profile"
+              onClick={() => setIsOpen(false)}
+              className="block rounded-xl px-4 py-3 text-sm font-medium text-text-grey transition hover:bg-primary-grey hover:text-heading-text-black"
+            >
+              Profile
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="block w-full rounded-xl px-4 py-3 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              Logout
+            </button>
+          </div>
         )}
-      >
-        Logout
-      </button>
+      </div>
     )
   }
 

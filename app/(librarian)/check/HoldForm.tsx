@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getCurrentStaffUser, StaffUser } from '@/lib/staff-user'
 import {
   User,
   BookOpen,
@@ -46,6 +47,7 @@ export default function HoldForm() {
 
   const [isMemberScannerOpen, setIsMemberScannerOpen] = useState(false)
   const [isBookScannerOpen, setIsBookScannerOpen] = useState(false)
+  const [staffUser, setStaffUser] = useState<StaffUser | null>(null)
 
   const memberInputRef = useRef<HTMLInputElement>(null)
   const bookInputRef = useRef<HTMLInputElement>(null)
@@ -61,6 +63,7 @@ export default function HoldForm() {
 
   useEffect(() => {
     memberInputRef.current?.focus()
+    void getCurrentStaffUser().then(setStaffUser)
   }, [])
 
   useEffect(() => {
@@ -221,6 +224,8 @@ export default function HoldForm() {
         book_id: book.id,
         member_id: member.id,
         hold_policy: holdPolicy,
+        hold_by_id: staffUser?.id || null,
+        hold_by_name: staffUser?.displayName || null,
       })
 
     if (holdError) {

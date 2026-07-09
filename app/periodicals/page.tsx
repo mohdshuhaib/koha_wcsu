@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Loading from '../loading'
-import { Plus, BookOpen, Download } from 'lucide-react'
+import { Plus, BookOpen, Download, AlertTriangle } from 'lucide-react'
 import AddPeriodicalModal from '@/components/AddPeriodicalModal'
 import PeriodicalCard from '@/components/PeriodicalCard'
 import * as XLSX from 'xlsx' // Import the Excel library
@@ -24,6 +24,38 @@ export type PeriodicalRecord = {
   issue_identifier: string;
   borrower_name: string;
   return_date: string | null;
+  created_by_name?: string | null;
+  returned_by_name?: string | null;
+}
+
+function ConfirmationModal({ isOpen, onClose, onConfirm, loading, periodical }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  loading: boolean;
+  periodical: Periodical | null;
+}) {
+  if (!isOpen || !periodical) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+      <div className="bg-secondary-white rounded-xl shadow-2xl max-w-sm w-full border border-primary-dark-grey">
+        <div className="p-6 text-center">
+          <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+          <h3 className="mt-4 text-xl font-bold font-heading text-heading-text-black">Delete Periodical?</h3>
+          <p className="mt-2 text-sm text-text-grey">
+            Are you sure you want to permanently delete "{periodical.name}" and all of its borrowing records? This action cannot be undone.
+          </p>
+        </div>
+        <div className="flex justify-end gap-3 bg-primary-grey p-4 rounded-b-xl">
+          <button onClick={onClose} disabled={loading} className="px-5 py-2 text-sm font-semibold text-text-grey bg-secondary-white border border-primary-dark-grey rounded-lg hover:bg-primary-dark-grey disabled:opacity-70">Cancel</button>
+          <button onClick={onConfirm} disabled={loading} className="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-70">
+            {loading ? 'Deleting...' : 'Confirm Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function PeriodicalsPage() {
@@ -33,6 +65,8 @@ export default function PeriodicalsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingPeriodical, setEditingPeriodical] = useState<Periodical | null>(null)
   const [isExporting, setIsExporting] = useState(false) // State for export button
+  const [periodicalToDelete, setPeriodicalToDelete] = useState<Periodical | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => { fetchData() }, [])
 
@@ -53,6 +87,35 @@ export default function PeriodicalsPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingPeriodical(null);
+  };
+
+  const handleDeletePeriodical = async () => {
+    if (!periodicalToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { error: recordsError } = await supabase
+        .from('periodical_records')
+        .delete()
+        .eq('periodical_id', periodicalToDelete.id);
+
+      if (recordsError) throw recordsError;
+
+      const { error: periodicalError } = await supabase
+        .from('periodicals')
+        .delete()
+        .eq('id', periodicalToDelete.id);
+
+      if (periodicalError) throw periodicalError;
+
+      setPeriodicalToDelete(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to delete periodical:', error);
+      alert('Failed to delete the periodical. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // --- NEW: Function to handle multi-sheet Excel Export ---
@@ -147,6 +210,7 @@ export default function PeriodicalsPage() {
                   records={recordsByPeriodicalId[periodical.id] || []}
                   onUpdate={fetchData}
                   onEdit={() => handleEdit(periodical)}
+                  onDelete={setPeriodicalToDelete}
                 />
               ))
             ) : (
@@ -164,6 +228,13 @@ export default function PeriodicalsPage() {
         onClose={closeModal}
         onSuccess={fetchData}
         periodicalToEdit={editingPeriodical}
+      />
+      <ConfirmationModal
+        isOpen={!!periodicalToDelete}
+        onClose={() => setPeriodicalToDelete(null)}
+        onConfirm={handleDeletePeriodical}
+        loading={isDeleting}
+        periodical={periodicalToDelete}
       />
     </>
   )

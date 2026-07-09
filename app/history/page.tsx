@@ -149,7 +149,10 @@ export default function HistoryPage() {
         Batch: r.members?.batch,
         Book: r.books?.title,
         Borrowed: dayjs(r.borrow_date).format('YYYY-MM-DD'),
-        Returned: r.return_date ? dayjs(r.return_date).format('YYYY-MM-DD') : 'Pending'
+        Returned: r.return_date ? dayjs(r.return_date).format('YYYY-MM-DD') : 'Pending',
+        'Checked Out By': r.checkout_by_name || '',
+        'Checked In By': r.checkin_by_name || '',
+        'Renewed By': r.renewal_by_name || '',
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rawData), "Raw Data");
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getCurrentStaffUser, StaffUser } from '@/lib/staff-user'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
@@ -57,6 +58,7 @@ export default function RenewBookForm() {
   const [previewData, setPreviewData] = useState<PreviewData | null>(null)
 
   const [isScannerOpen, setIsScannerOpen] = useState(false)
+  const [staffUser, setStaffUser] = useState<StaffUser | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -71,6 +73,7 @@ export default function RenewBookForm() {
 
   useEffect(() => {
     inputRef.current?.focus()
+    void getCurrentStaffUser().then(setStaffUser)
   }, [])
 
   const clearMessage = () => {
@@ -259,6 +262,16 @@ export default function RenewBookForm() {
       setIsError(false)
       setLoading(false)
       return
+    }
+
+    if (staffUser) {
+      await supabase
+        .from('borrow_records')
+        .update({
+          renewal_by_id: staffUser.id,
+          renewal_by_name: staffUser.displayName,
+        })
+        .eq('id', borrowRecord.id)
     }
 
     setMessage(

@@ -46,7 +46,7 @@ export default function LoginPage() {
 
         if (role === 'developer') {
           router.replace('/developer/dashboard-dev')
-        } else if (role === 'librarian') {
+        } else if (role === 'librarian' || role === 'admin') {
           router.replace('/dashboard')
         } else {
           router.replace('/member/dashboard-mem')
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
       if (role === 'developer') {
         router.push('/developer/dashboard-dev')
-      } else if (role === 'librarian') {
+      } else if (role === 'librarian' || role === 'admin') {
         router.push('/dashboard')
       } else {
         router.push('/member/dashboard-mem')

@@ -29,7 +29,7 @@ export default function MemberLogin() {
 
       if (session) {
         const role = session.user.user_metadata?.role || 'member'
-        router.replace(role === 'librarian' ? '/dashboard' : '/member/dashboard-mem')
+        router.replace(role === 'librarian' || role === 'admin' ? '/dashboard' : '/member/dashboard-mem')
       } else {
         setCheckingSession(false)
       }

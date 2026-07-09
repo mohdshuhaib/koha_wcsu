@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { sendLibraryNotification } from '@/lib/notification-events-client'
+import { getCurrentStaffUser, StaffUser } from '@/lib/staff-user'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
@@ -206,6 +207,7 @@ export default function CheckInForm() {
   const [isResetGlobalLeavesModalOpen, setIsResetGlobalLeavesModalOpen] = useState(false)
 
   const [isScannerOpen, setIsScannerOpen] = useState(false)
+  const [staffUser, setStaffUser] = useState<StaffUser | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -220,6 +222,7 @@ export default function CheckInForm() {
 
   useEffect(() => {
     inputRef.current?.focus()
+    void getCurrentStaffUser().then(setStaffUser)
   }, [])
 
   useEffect(() => {
@@ -540,6 +543,16 @@ export default function CheckInForm() {
       setIsError(true)
       setLoading(false)
       return
+    }
+
+    if (staffUser) {
+      await supabase
+        .from('borrow_records')
+        .update({
+          checkin_by_id: staffUser.id,
+          checkin_by_name: staffUser.displayName,
+        })
+        .eq('id', activeRecord.id)
     }
 
     let successMessage = `Returned "${activeRecord.book.title}" by ${activeRecord.member.name}.`

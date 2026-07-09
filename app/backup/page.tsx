@@ -249,7 +249,6 @@ export default function BackupPage() {
         await supabase.from('holidays').delete().gt('id', 0);
 
         // Delete Librarians
-        await supabase.from('librarians').delete().gt('id', 0);
 
         // 2. Finally, delete all Borrow Records (Central transaction table)
         const { error: borrowError } = await supabase.from('borrow_records').delete().neq('id', '00000000-0000-0000-0000-000000000000');
