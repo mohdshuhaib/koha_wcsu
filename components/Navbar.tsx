@@ -162,7 +162,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed inset-x-0 top-0 z-50 border-b border-primary-dark-grey bg-secondary-white/95 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-secondary-white/85">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[96rem] px-3 sm:px-4 lg:px-5 xl:px-6">
           <div className="flex h-16 items-center justify-between gap-3">
             <Link
               href="/"
