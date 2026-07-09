@@ -16,6 +16,12 @@ export type Member = {
   category: string
   barcode: string
   batch: string
+  ph_no: string | null
+  address: string | null
+  dob: string | null
+  email: string | null
+  class: string | null
+  image_link: string | null
 }
 
 export default function PatronsPage() {
@@ -53,7 +59,10 @@ export default function PatronsPage() {
       m.name.toLowerCase().includes(query) ||
       m.category.toLowerCase().includes(query) ||
       m.barcode.toLowerCase().includes(query) ||
-      m.batch.toLowerCase().includes(query)
+      m.batch.toLowerCase().includes(query) ||
+      (m.email || '').toLowerCase().includes(query) ||
+      (m.ph_no || '').toLowerCase().includes(query) ||
+      (m.class || '').toLowerCase().includes(query)
     )
   }, [search, members])
 

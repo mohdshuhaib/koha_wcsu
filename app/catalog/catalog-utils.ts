@@ -15,8 +15,10 @@ export type Book = {
   author: string | null
   language: 'MAL' | 'ENG' | 'ARB' | 'URD' | string | null
   call_number: string | null
-  shelf_location: string | null
   pages: number | null
+  price: number | null
+  edition: string | null
+  publication: string | null
   status: 'available' | 'borrowed' | 'held'
   borrow_records?: {
     return_date: string | null

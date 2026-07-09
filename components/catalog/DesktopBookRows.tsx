@@ -56,7 +56,13 @@ export default function DesktopBookRows({
           {book.call_number || '-'}
         </td>
         <td className="px-4 py-4 align-top text-text-grey">
-          {book.shelf_location || '-'}
+          {book.edition || '-'}
+        </td>
+        <td className="px-4 py-4 align-top text-text-grey">
+          {book.publication || '-'}
+        </td>
+        <td className="px-4 py-4 align-top font-semibold text-text-grey">
+          {book.price != null ? `₹${book.price}` : '-'}
         </td>
         <td className="px-4 py-4 align-top">
           <StatusBadge status={book.status} heldBy={heldBy} borrowedBy={borrowedBy} />
@@ -64,7 +70,7 @@ export default function DesktopBookRows({
       </tr>
 
       <tr className="border-b border-primary-dark-grey bg-[#fafafa]">
-        <td colSpan={8} className="px-4 py-4">
+        <td colSpan={10} className="px-4 py-4">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 text-sm text-text-grey">

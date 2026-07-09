@@ -46,7 +46,7 @@ export default function HistoryPage() {
       .select(`
         *,
         members!inner(name, batch, category),
-        books!inner(title, barcode, author, pages, shelf_location)
+        books!inner(title, barcode, author, pages, price, edition, publication)
       `)
       .order('borrow_date', { ascending: false })
 
@@ -164,7 +164,7 @@ export default function HistoryPage() {
 
     const { data } = await supabase
         .from('borrow_records')
-        .select('*, books(title, barcode, author, pages, shelf_location)')
+        .select('*, books(title, barcode, author, pages, price, edition, publication)')
         .eq('member_id', memberId)
         .order('borrow_date', { ascending: false })
 

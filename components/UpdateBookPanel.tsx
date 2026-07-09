@@ -20,11 +20,13 @@ interface BookData {
   title: string;
   author: string;
   language: string;
-  shelf_location: string;
   call_number: string;
   barcode: string;
   status: string;
   pages: number | null; // Can be a number or null
+  price: number | null;
+  edition: string | null;
+  publication: string | null;
 }
 
 export default function UpdateBookPanel({ showSidebar, setShowSidebar }: Props) {
@@ -81,10 +83,12 @@ export default function UpdateBookPanel({ showSidebar, setShowSidebar }: Props) 
       .update({
         title: book.title,
         author: book.author,
-        shelf_location: book.shelf_location,
         call_number: book.call_number,
         status: book.status,
         pages: book.pages, // Add the pages field here
+        price: book.price,
+        edition: book.edition,
+        publication: book.publication,
       })
       .eq('id', book.id)
 
@@ -152,12 +156,20 @@ export default function UpdateBookPanel({ showSidebar, setShowSidebar }: Props) 
                   <input type="text" value={book.language} readOnly className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-gray-200 text-gray-500 cursor-not-allowed" />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-text-grey">Shelf Location</label>
-                  <input type="text" value={book.shelf_location} onChange={(e) => setBook({ ...book, shelf_location: e.target.value })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
-                </div>
-                <div>
                   <label className="text-sm font-semibold text-text-grey">Call Number</label>
                   <input type="text" value={book.call_number} onChange={(e) => setBook({ ...book, call_number: e.target.value })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-text-grey">Price</label>
+                  <input type="number" min="0" step="0.01" value={book.price || ''} onChange={(e) => setBook({ ...book, price: e.target.value ? Number(e.target.value) : null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-text-grey">Edition</label>
+                  <input type="text" value={book.edition || ''} onChange={(e) => setBook({ ...book, edition: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-text-grey">Publication</label>
+                  <input type="text" value={book.publication || ''} onChange={(e) => setBook({ ...book, publication: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
                 </div>
 
                 {/* ✅ NEW: Pages Input Field */}

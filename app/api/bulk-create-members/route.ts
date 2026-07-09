@@ -57,7 +57,13 @@ export async function POST(req: NextRequest) {
         name: normalizedName,
         category: normalizedCategory,
         barcode: normalizedBarcode,
-        batch: normalizedBatch
+        batch: normalizedBatch,
+        ph_no: member.ph_no || null,
+        address: member.address || null,
+        dob: member.dob || null,
+        email: member.email || null,
+        class: member.class || null,
+        image_link: member.image_link || null,
       }
 
       // Insert into members table, or repair a row that was previously created without Auth.

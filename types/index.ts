@@ -3,7 +3,9 @@ export type Book = {
   barcode: string
   author?: string
   pages?: number | null
-  shelf_location?: string
+  price?: number | null
+  edition?: string | null
+  publication?: string | null
 }
 
 export type Member = {
@@ -12,6 +14,12 @@ export type Member = {
   barcode: string
   batch: string
   category: string
+  ph_no?: string | null
+  address?: string | null
+  dob?: string | null
+  email?: string | null
+  class?: string | null
+  image_link?: string | null
 }
 
 export type HistoryRecord = {

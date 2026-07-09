@@ -21,7 +21,9 @@ type BorrowRecord = {
     barcode: string
     author: string        // ✨ Added
     pages: number | null  // ✨ Added
-    shelf_location: string // ✨ Added
+    price: number | null
+    edition: string | null
+    publication: string | null
   } | null
 }
 
@@ -31,6 +33,12 @@ type Member = {
   barcode: string
   batch: string
   category: string
+  ph_no: string | null
+  address: string | null
+  dob: string | null
+  email: string | null
+  class: string | null
+  image_link: string | null
 }
 
 type MemberDetails = {
@@ -73,7 +81,7 @@ export default function PatronStatusPage() {
     // ✨ UPDATED: Fetch additional book details for the tooltip
     const { data: records } = await supabase
       .from('borrow_records')
-      .select('*, books(title, barcode, author, pages, shelf_location)')
+      .select('*, books(title, barcode, author, pages, price, edition, publication)')
       .eq('member_id', member.id)
       .order('borrow_date', { ascending: false })
 
@@ -126,6 +134,9 @@ export default function PatronStatusPage() {
             'Member Name': member.name,
             'Returned Books Count': returnCounts[member.id],
             'Barcode': member.barcode,
+            'Phone': member.ph_no || '',
+            'Email': member.email || '',
+            'Class': member.class || '',
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -190,7 +201,10 @@ export default function PatronStatusPage() {
   const filteredMembers = members.filter(
     (member) =>
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.barcode.toLowerCase().includes(searchQuery.toLowerCase())
+      member.barcode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (member.ph_no || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (member.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (member.class || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const uniqueBatches = [...Array.from(new Set(members.map(m => m.batch).filter(Boolean)))].sort();
@@ -254,6 +268,7 @@ export default function PatronStatusPage() {
                     <th className="text-left p-3 font-semibold uppercase tracking-wider">Name</th>
                     <th className="text-left p-3 font-semibold uppercase tracking-wider">Barcode</th>
                     <th className="text-left p-3 font-semibold uppercase tracking-wider">Batch/Category</th>
+                    <th className="text-left p-3 font-semibold uppercase tracking-wider">Contact</th>
                     <th className="text-center p-3 font-semibold uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -262,7 +277,14 @@ export default function PatronStatusPage() {
                     <tr key={member.id} className="border-b border-primary-dark-grey last:border-b-0 hover:bg-primary-grey transition">
                       <td className="p-3 font-semibold text-heading-text-black">{member.name}</td>
                       <td className="p-3 text-text-grey">{member.barcode}</td>
-                      <td className="p-3 text-text-grey">{member.batch || member.category}</td>
+                      <td className="p-3 text-text-grey">
+                        <div>{member.batch || member.category}</div>
+                        {member.class && <div className="text-xs">Class: {member.class}</div>}
+                      </td>
+                      <td className="p-3 text-text-grey">
+                        <div>{member.ph_no || '-'}</div>
+                        {member.email && <div className="text-xs">{member.email}</div>}
+                      </td>
                       <td className="p-3 text-center">
                         <button onClick={() => handleViewDetails(member)} className="flex items-center justify-center gap-2 w-full bg-button-yellow text-button-text-black font-bold px-4 py-1.5 rounded-md hover:bg-yellow-500 transition">
                           <Eye size={14} /> View Details
@@ -341,7 +363,9 @@ function HistoryItem({ record, isReturnedList }: { record: BorrowRecord, isRetur
              <p><span className="font-bold text-gray-400">Author:</span> {record.books.author || 'N/A'}</p>
              <p><span className="font-bold text-gray-400">Barcode:</span> {record.books.barcode}</p>
              <p><span className="font-bold text-gray-400">Pages:</span> {record.books.pages || '-'}</p>
-             <p><span className="font-bold text-gray-400">Shelf:</span> {record.books.shelf_location || 'N/A'}</p>
+             <p><span className="font-bold text-gray-400">Publication:</span> {record.books.publication || 'N/A'}</p>
+             <p><span className="font-bold text-gray-400">Edition:</span> {record.books.edition || 'N/A'}</p>
+             <p><span className="font-bold text-gray-400">Price:</span> {record.books.price != null ? `₹${record.books.price}` : '-'}</p>
            </div>
            {/* Arrow */}
            <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-gray-800"></div>

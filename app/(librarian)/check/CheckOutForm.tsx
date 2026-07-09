@@ -157,10 +157,10 @@ export default function CheckOutForm() {
   const getDueDate = (category: string | null | undefined) => {
     const dueInDays =
       category === 'student'
-        ? 15
+        ? 14
         : category === 'teacher' || category === 'outside' || category === 'class'
           ? 30
-          : 15
+          : 14
 
     return dayjs().startOf('day').add(dueInDays, 'day').format('YYYY-MM-DD')
   }

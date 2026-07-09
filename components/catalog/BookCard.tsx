@@ -50,7 +50,9 @@ export default function BookCard({
           <InfoItem label="Language" value={getLanguageName(book.language)} />
           <InfoItem label="Pages" value={book.pages ? String(book.pages) : '-'} />
           <InfoItem label="Call No." value={book.call_number || '-'} />
-          <InfoItem label="Shelf" value={book.shelf_location || '-'} />
+          <InfoItem label="Edition" value={book.edition || '-'} />
+          <InfoItem label="Publication" value={book.publication || '-'} />
+          <InfoItem label="Price" value={book.price != null ? `₹${book.price}` : '-'} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-sm text-text-grey">

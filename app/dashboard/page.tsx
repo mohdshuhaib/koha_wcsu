@@ -122,7 +122,7 @@ export default function DashboardPage() {
     // Step 3: Get details for the borrowed books of the specified language
     const { data: booksData, error: booksError } = await supabase
       .from('books')
-      .select('id, title, author, barcode, call_number, shelf_location') // Select 'id' to map counts
+      .select('id, title, author, barcode, call_number, price, edition, publication') // Select 'id' to map counts
       .eq('language', languageCode)
       .in('id', uniqueBookIds);
 
@@ -139,7 +139,9 @@ export default function DashboardPage() {
         Barcode: book.barcode,
         'Borrow Count': borrowCounts[book.id] || 0, // Add the count
         'Call Number': book.call_number,
-        'Shelf Location': book.shelf_location,
+        Publication: book.publication,
+        Edition: book.edition,
+        Price: book.price,
     })).sort((a, b) => b['Borrow Count'] - a['Borrow Count']); // Sort by most borrowed
 
     // Step 5: Create and download the Excel file

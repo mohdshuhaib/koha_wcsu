@@ -20,6 +20,12 @@ interface PatronData {
   batch: string;
   category: string;
   barcode: string;
+  ph_no: string | null;
+  address: string | null;
+  dob: string | null;
+  email: string | null;
+  class: string | null;
+  image_link: string | null;
 }
 
 export default function UpdatePatronPanel({ showPanel, setShowPanel }: Props) {
@@ -77,6 +83,12 @@ export default function UpdatePatronPanel({ showPanel, setShowPanel }: Props) {
         name: patron.name,
         batch: patron.batch,
         category: patron.category,
+        ph_no: patron.ph_no,
+        address: patron.address,
+        dob: patron.dob,
+        email: patron.email,
+        class: patron.class,
+        image_link: patron.image_link,
       })
       .eq('id', patron.id)
 
@@ -154,6 +166,30 @@ export default function UpdatePatronPanel({ showPanel, setShowPanel }: Props) {
                 <div className="md:col-span-2">
                   <label className="text-sm font-semibold text-text-grey">Barcode</label>
                   <input type="text" value={patron.barcode} readOnly className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-gray-200 text-gray-500 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-text-grey">Phone Number</label>
+                  <input type="text" value={patron.ph_no || ''} onChange={(e) => setPatron({ ...patron, ph_no: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-text-grey">Email</label>
+                  <input type="email" value={patron.email || ''} onChange={(e) => setPatron({ ...patron, email: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-text-grey">Date of Birth</label>
+                  <input type="date" value={patron.dob || ''} onChange={(e) => setPatron({ ...patron, dob: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-text-grey">Class</label>
+                  <input type="text" value={patron.class || ''} onChange={(e) => setPatron({ ...patron, class: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-semibold text-text-grey">Address</label>
+                  <input type="text" value={patron.address || ''} onChange={(e) => setPatron({ ...patron, address: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-semibold text-text-grey">Image Drive Link</label>
+                  <input type="text" value={patron.image_link || ''} onChange={(e) => setPatron({ ...patron, image_link: e.target.value || null })} className="w-full mt-1 p-2 border border-primary-dark-grey rounded-md bg-primary-grey" />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">

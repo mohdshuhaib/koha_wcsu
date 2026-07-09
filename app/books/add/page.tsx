@@ -14,10 +14,12 @@ export default function AddBookPage() {
     title: '',
     author: '',
     language: '',
-    shelf_location: '',
     call_number: '',
     barcode: '',
     pages: '',
+    price: '',
+    edition: '',
+    publication: '',
     status: 'available',
   })
   const [error, setError] = useState('')
@@ -54,6 +56,9 @@ export default function AddBookPage() {
     const bookToInsert = {
       ...formData,
       pages: formData.pages.trim() ? Number(formData.pages) : null,
+      price: formData.price.trim() ? Number(formData.price) : null,
+      edition: formData.edition.trim() || null,
+      publication: formData.publication.trim() || null,
     }
 
     const { error } = await supabase.from('books').insert([bookToInsert])
@@ -62,8 +67,8 @@ export default function AddBookPage() {
     } else {
       setSuccess(`Successfully added "${formData.title}" to the catalog!`)
       setFormData({
-        title: '', author: '', language: '', shelf_location: '',
-        call_number: '', barcode: '', pages: '', status: 'available',
+        title: '', author: '', language: '', call_number: '', barcode: '',
+        pages: '', price: '', edition: '', publication: '', status: 'available',
       })
     }
     setLoading(false)
@@ -123,13 +128,23 @@ export default function AddBookPage() {
               </div>
 
               <div>
-                <label htmlFor="shelf_location" className="block text-sm font-semibold text-text-grey mb-1">Shelf Location</label>
-                <input id="shelf_location" name="shelf_location" placeholder="e.g., 71, 23" value={formData.shelf_location} onChange={handleChange} required className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+                <label htmlFor="call_number" className="block text-sm font-semibold text-text-grey mb-1">Call Number</label>
+                <input id="call_number" name="call_number" placeholder="e.g., 813.2/HNK" value={formData.call_number} onChange={handleChange} required className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
               </div>
 
               <div>
-                <label htmlFor="call_number" className="block text-sm font-semibold text-text-grey mb-1">Call Number</label>
-                <input id="call_number" name="call_number" placeholder="e.g., 813.2/HNK" value={formData.call_number} onChange={handleChange} required className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+                <label htmlFor="price" className="block text-sm font-semibold text-text-grey mb-1">Price <span className="font-normal">(optional)</span></label>
+                <input id="price" name="price" type="number" min="0" step="0.01" placeholder="e.g., 250" value={formData.price} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div>
+                <label htmlFor="edition" className="block text-sm font-semibold text-text-grey mb-1">Edition <span className="font-normal">(optional)</span></label>
+                <input id="edition" name="edition" placeholder="e.g., 2nd Edition" value={formData.edition} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div>
+                <label htmlFor="publication" className="block text-sm font-semibold text-text-grey mb-1">Publication <span className="font-normal">(optional)</span></label>
+                <input id="publication" name="publication" placeholder="Publisher or publication name" value={formData.publication} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
               </div>
 
               <div className="md:col-span-2">

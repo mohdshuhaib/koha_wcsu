@@ -14,6 +14,12 @@ type MemberRow = {
   category: string
   barcode: string
   batch: string
+  ph_no?: string
+  address?: string
+  dob?: string
+  email?: string
+  class?: string
+  image_link?: string
 }
 
 export default function BulkUploadMembers() {
@@ -56,6 +62,12 @@ export default function BulkUploadMembers() {
             category: row.category.trim().toLowerCase() === 'outsider' ? 'outside' : row.category.trim().toLowerCase(),
             barcode: row.barcode.trim().toUpperCase(),
             batch: row.batch.trim(),
+            ph_no: row.ph_no?.trim() || null,
+            address: row.address?.trim() || null,
+            dob: row.dob?.trim() || null,
+            email: row.email?.trim() || null,
+            class: row.class?.trim() || null,
+            image_link: row.image_link?.trim() || null,
           }))
 
         if (validRows.length === 0) {
@@ -113,7 +125,7 @@ export default function BulkUploadMembers() {
   }
 
   const handleDownloadTemplate = () => {
-    const headers = [['name', 'category', 'barcode', 'batch']];
+    const headers = [['name', 'category', 'barcode', 'batch', 'ph_no', 'address', 'dob', 'email', 'class', 'image_link']];
     const csv = Papa.unparse(headers);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -200,13 +212,19 @@ export default function BulkUploadMembers() {
                     <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
                   ))}
                 </div>
-                <p>3. Ensure the categories should be as given below (don't use capital letters)</p>
+                <p>3. Optional columns:</p>
+                <div className="flex flex-wrap gap-2">
+                  {['ph_no', 'address', 'dob', 'email', 'class', 'image_link'].map(col => (
+                    <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
+                  ))}
+                </div>
+                <p>4. Ensure the categories should be as given below (don't use capital letters)</p>
                 <div className="flex flex-wrap gap-2">
                   {['student', 'teacher', 'class', 'outside'].map(col => (
                     <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
                   ))}
                 </div>
-                <p>4. Save the file as a CSV and upload it using the panel on the left.</p>
+                <p>5. Save the file as a CSV and upload it using the panel on the left.</p>
               </div>
               <button onClick={handleDownloadTemplate} className="w-full mt-6 flex items-center justify-center gap-2 bg-dark-green text-white px-4 py-2.5 rounded-lg font-semibold text-sm hover:bg-icon-green transition">
                 <Download size={16} /> Download Template.csv

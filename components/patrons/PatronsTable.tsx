@@ -1,6 +1,7 @@
 'use client'
 
 import type { Member } from '@/app/patrons/page'
+import { getDriveImageUrl } from '@/lib/drive-image'
 
 export default function PatronsTable({
   members,
@@ -17,6 +18,9 @@ export default function PatronsTable({
                 Name
               </th>
               <th className="px-5 py-4 font-semibold uppercase tracking-wider">
+                Contact
+              </th>
+              <th className="px-5 py-4 font-semibold uppercase tracking-wider">
                 Category
               </th>
               <th className="px-5 py-4 font-semibold uppercase tracking-wider">
@@ -29,25 +33,39 @@ export default function PatronsTable({
           </thead>
 
           <tbody>
-            {members.map((member) => (
-              <tr
-                key={member.id}
-                className="border-b border-primary-dark-grey transition hover:bg-primary-grey/70 last:border-b-0"
-              >
-                <td className="px-5 py-4 font-semibold text-heading-text-black">
-                  {member.name}
-                </td>
-                <td className="px-5 py-4 text-text-grey">
-                  {member.category}
-                </td>
-                <td className="px-5 py-4 text-text-grey">
-                  {member.barcode}
-                </td>
-                <td className="px-5 py-4 text-text-grey">
-                  {member.batch}
-                </td>
-              </tr>
-            ))}
+            {members.map((member) => {
+              const imageUrl = getDriveImageUrl(member.image_link)
+
+              return (
+                <tr
+                  key={member.id}
+                  className="border-b border-primary-dark-grey transition hover:bg-primary-grey/70 last:border-b-0"
+                >
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      {imageUrl && <img src={imageUrl} alt={member.name} className="h-10 w-10 rounded-full object-cover" />}
+                      <div>
+                        <p className="font-semibold text-heading-text-black">{member.name}</p>
+                        {member.class && <p className="text-xs text-text-grey">Class: {member.class}</p>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-text-grey">
+                    <div>{member.ph_no || '-'}</div>
+                    {member.email && <div className="text-xs">{member.email}</div>}
+                  </td>
+                  <td className="px-5 py-4 text-text-grey">
+                    {member.category}
+                  </td>
+                  <td className="px-5 py-4 text-text-grey">
+                    {member.barcode}
+                  </td>
+                  <td className="px-5 py-4 text-text-grey">
+                    {member.batch}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

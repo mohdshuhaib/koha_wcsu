@@ -26,6 +26,12 @@ type PatronData = {
   batch: string
   category: string
   barcode: string
+  ph_no: string | null
+  address: string | null
+  dob: string | null
+  email: string | null
+  class: string | null
+  image_link: string | null
 }
 
 type Feedback = {
@@ -143,6 +149,12 @@ export default function UpdatePatronsPage() {
         name: patron.name,
         batch: patron.batch,
         category: patron.category,
+        ph_no: patron.ph_no,
+        address: patron.address,
+        dob: patron.dob,
+        email: patron.email,
+        class: patron.class,
+        image_link: patron.image_link,
       })
       .eq('id', patron.id)
 
@@ -308,6 +320,60 @@ export default function UpdatePatronsPage() {
                       value={patron.barcode}
                       readOnly
                       className="mt-1 w-full cursor-not-allowed rounded-md border border-primary-dark-grey bg-gray-200 p-2 text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-text-grey">Phone Number</label>
+                    <input
+                      type="text"
+                      value={patron.ph_no || ''}
+                      onChange={(event) => setPatron({ ...patron, ph_no: event.target.value || null })}
+                      className="mt-1 w-full rounded-md border border-primary-dark-grey bg-primary-grey p-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-text-grey">Email</label>
+                    <input
+                      type="email"
+                      value={patron.email || ''}
+                      onChange={(event) => setPatron({ ...patron, email: event.target.value || null })}
+                      className="mt-1 w-full rounded-md border border-primary-dark-grey bg-primary-grey p-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-text-grey">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={patron.dob || ''}
+                      onChange={(event) => setPatron({ ...patron, dob: event.target.value || null })}
+                      className="mt-1 w-full rounded-md border border-primary-dark-grey bg-primary-grey p-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-text-grey">Class</label>
+                    <input
+                      type="text"
+                      value={patron.class || ''}
+                      onChange={(event) => setPatron({ ...patron, class: event.target.value || null })}
+                      className="mt-1 w-full rounded-md border border-primary-dark-grey bg-primary-grey p-2"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-semibold text-text-grey">Address</label>
+                    <input
+                      type="text"
+                      value={patron.address || ''}
+                      onChange={(event) => setPatron({ ...patron, address: event.target.value || null })}
+                      className="mt-1 w-full rounded-md border border-primary-dark-grey bg-primary-grey p-2"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-semibold text-text-grey">Image Drive Link</label>
+                    <input
+                      type="text"
+                      value={patron.image_link || ''}
+                      onChange={(event) => setPatron({ ...patron, image_link: event.target.value || null })}
+                      className="mt-1 w-full rounded-md border border-primary-dark-grey bg-primary-grey p-2"
                     />
                   </div>
                 </div>

@@ -14,6 +14,12 @@ export default function AddMemberPage() {
     batch: '',
     barcode: '',
     category: '',
+    ph_no: '',
+    address: '',
+    dob: '',
+    email: '',
+    class: '',
+    image_link: '',
   })
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -51,6 +57,12 @@ export default function AddMemberPage() {
       barcode: formData.barcode.trim().toUpperCase(),
       name: formData.name.trim(),
       batch: formData.batch.trim(),
+      ph_no: formData.ph_no.trim() || null,
+      address: formData.address.trim() || null,
+      dob: formData.dob || null,
+      email: formData.email.trim() || null,
+      class: formData.class.trim() || null,
+      image_link: formData.image_link.trim() || null,
     }
 
     const response = await fetch('/api/create-member', {
@@ -66,7 +78,7 @@ export default function AddMemberPage() {
     } else {
       setFeedback({ type: 'success', message: `Successfully added "${normalizedData.name}" to the library. They can now log in with barcode ${normalizedData.barcode}.` })
       // Reset form on success
-      setFormData({ name: '', batch: '', barcode: '', category: '' })
+      setFormData({ name: '', batch: '', barcode: '', category: '', ph_no: '', address: '', dob: '', email: '', class: '', image_link: '' })
     }
     setLoading(false)
   }
@@ -120,6 +132,36 @@ export default function AddMemberPage() {
               <div className="md:col-span-2">
                 <label htmlFor="barcode" className="block text-sm font-semibold text-text-grey mb-1">Barcode</label>
                 <input id="barcode" name="barcode" value={formData.barcode} onChange={handleChange} required placeholder="e.g., U445" className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div>
+                <label htmlFor="ph_no" className="block text-sm font-semibold text-text-grey mb-1">Phone Number <span className="font-normal">(optional)</span></label>
+                <input id="ph_no" name="ph_no" value={formData.ph_no} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-text-grey mb-1">Email <span className="font-normal">(optional)</span></label>
+                <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div>
+                <label htmlFor="dob" className="block text-sm font-semibold text-text-grey mb-1">Date of Birth <span className="font-normal">(optional)</span></label>
+                <input id="dob" name="dob" type="date" value={formData.dob} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div>
+                <label htmlFor="class" className="block text-sm font-semibold text-text-grey mb-1">Class <span className="font-normal">(optional)</span></label>
+                <input id="class" name="class" value={formData.class} onChange={handleChange} placeholder="e.g., 10A" className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="address" className="block text-sm font-semibold text-text-grey mb-1">Address <span className="font-normal">(optional)</span></label>
+                <input id="address" name="address" value={formData.address} onChange={handleChange} className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="image_link" className="block text-sm font-semibold text-text-grey mb-1">Image Drive Link <span className="font-normal">(optional)</span></label>
+                <input id="image_link" name="image_link" value={formData.image_link} onChange={handleChange} placeholder="Paste Google Drive image link" className="w-full p-3 rounded-lg bg-primary-grey border border-primary-dark-grey text-text-grey placeholder-text-grey focus:outline-none focus:ring-2 focus:ring-dark-green" />
               </div>
             </div>
 

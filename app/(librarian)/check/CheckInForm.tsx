@@ -90,9 +90,13 @@ function formatIST(value: string | Date | dayjs.Dayjs, format = 'DD MMM YYYY') {
 }
 
 function getAllowedDays(category?: string | null) {
-  if (category === 'student') return 15
+  if (category === 'student') return 14
   if (category === 'teacher' || category === 'outside' || category === 'class') return 30
-  return 15
+  return 14
+}
+
+function isFineEligibleCategory(category?: string | null) {
+  return category === 'student'
 }
 
 function getFallbackDueDateKey(borrowDate: string, category?: string | null) {
@@ -332,10 +336,7 @@ export default function CheckInForm() {
     const totalExcludedDays = allUniqueExcludedDates.size
     const effectiveOverdueDays = Math.max(overdueDays - totalExcludedDays, 0)
 
-    let fine = 0
-    if (effectiveOverdueDays > 0) {
-      fine = 3 + (effectiveOverdueDays - 1)
-    }
+    const fine = isFineEligibleCategory(recordToProcess.member.category) ? effectiveOverdueDays : 0
 
     return {
       fine,

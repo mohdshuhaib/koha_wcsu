@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     const normalizedBarcode = String(barcode).trim().toUpperCase()
     const normalizedName = String(name).trim()
     const normalizedBatch = String(batch).trim()
+    const normalizedCategory = String(category).trim().toLowerCase()
     const email = `${normalizedBarcode.toLowerCase()}@member.wcsu`
     const password = normalizedBarcode.padEnd(6, '0') // You could use a more secure password scheme
 
@@ -50,8 +51,14 @@ export async function POST(req: Request) {
       id: authUser.user.id,
       name: normalizedName,
       barcode: normalizedBarcode,
-      category,
+      category: normalizedCategory,
       batch: normalizedBatch,
+      ph_no: body.ph_no || null,
+      address: body.address || null,
+      dob: body.dob || null,
+      email: body.email || null,
+      class: body.class || null,
+      image_link: body.image_link || null,
     }
 
     // Step 2: Insert into `members` table, or repair an existing member row

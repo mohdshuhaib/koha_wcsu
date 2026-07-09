@@ -56,7 +56,7 @@ export default function CatalogPage() {
     if (search.trim()) {
       const searchText = `%${search.trim()}%`
       query = query.or(
-        `title.ilike.${searchText},author.ilike.${searchText},language.ilike.${searchText},call_number.ilike.${searchText},barcode.ilike.${searchText},shelf_location.ilike.${searchText}`
+        `title.ilike.${searchText},author.ilike.${searchText},language.ilike.${searchText},call_number.ilike.${searchText},barcode.ilike.${searchText},edition.ilike.${searchText},publication.ilike.${searchText}`
       )
     }
 
@@ -133,7 +133,7 @@ export default function CatalogPage() {
     try {
       const { data: allBooks, error } = await supabase
         .from('books')
-        .select('title, author, barcode, language, call_number, shelf_location, pages, status')
+        .select('title, author, barcode, language, call_number, pages, price, edition, publication, status')
         .order('language')
         .order('title')
 
@@ -291,7 +291,9 @@ export default function CatalogPage() {
                           <th className="px-4 py-4 font-semibold uppercase tracking-wider">Language</th>
                           <th className="px-4 py-4 font-semibold uppercase tracking-wider">Pages</th>
                           <th className="px-4 py-4 font-semibold uppercase tracking-wider">Call Number</th>
-                          <th className="px-4 py-4 font-semibold uppercase tracking-wider">Shelf</th>
+                          <th className="px-4 py-4 font-semibold uppercase tracking-wider">Edition</th>
+                          <th className="px-4 py-4 font-semibold uppercase tracking-wider">Publication</th>
+                          <th className="px-4 py-4 font-semibold uppercase tracking-wider">Price</th>
                           <th className="px-4 py-4 font-semibold uppercase tracking-wider">Status</th>
                         </tr>
                       </thead>

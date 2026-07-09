@@ -24,6 +24,12 @@ export default function BulkUploadPage() {
     return Number.isFinite(pages) && pages > 0 ? pages : null
   }
 
+  const parseOptionalPrice = (value: unknown) => {
+    if (value === undefined || value === null || value === '') return null
+    const price = Number(value)
+    return Number.isFinite(price) && price >= 0 ? price : null
+  }
+
   // --- Authentication Logic (Unchanged) ---
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,10 +63,12 @@ export default function BulkUploadPage() {
         title: row.title || '',
         author: row.author || '',
         language: row.language || '',
-        shelf_location: row.shelf_location || '',
         call_number: row.call_number || '',
         barcode: row.barcode?.toString() || '',
         pages: parseOptionalPages(row.pages),
+        price: parseOptionalPrice(row.price),
+        edition: row.edition || null,
+        publication: row.publication || null,
         status: row.status || 'available',
       }))
 
@@ -100,7 +108,7 @@ export default function BulkUploadPage() {
   }
 
   const handleDownloadTemplate = () => {
-    const headers = [['title', 'author', 'language', 'shelf_location', 'call_number', 'barcode', 'pages']];
+    const headers = [['title', 'author', 'language', 'call_number', 'barcode', 'pages', 'price', 'edition', 'publication']];
     const ws = XLSX.utils.aoa_to_sheet(headers);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Books');
@@ -178,15 +186,17 @@ export default function BulkUploadPage() {
                 <p>1. Download the template file to ensure your data is in the correct format.</p>
                 <p>2. Fill in the book details. The required columns are:</p>
                 <div className="flex flex-wrap gap-2">
-                  {['title', 'author', 'language', 'shelf_location', 'call_number', 'barcode'].map(col => (
+                  {['title', 'author', 'language', 'call_number', 'barcode'].map(col => (
                     <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
                   ))}
                 </div>
-                <p>3. The optional column is:</p>
+                <p>3. The optional columns are:</p>
                 <div className="flex flex-wrap gap-2">
-                  <code className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">pages</code>
+                  {['pages', 'price', 'edition', 'publication'].map(col => (
+                    <code key={col} className="px-2 py-1 bg-gray-300 text-heading-text-black rounded text-xs font-semibold">{col}</code>
+                  ))}
                 </div>
-                <p>Leave pages empty if the page count is not known.</p>
+                <p>Leave optional columns empty if the details are not known.</p>
                 <p>4. Ensure that in the language column use it like this</p>
                 <div className="flex flex-wrap gap-2">
                   {['MAL', 'ENG', 'ARB', 'URD'].map(col => (

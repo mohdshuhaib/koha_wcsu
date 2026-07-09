@@ -100,7 +100,9 @@ function HistoryItem({ record, isReturned }: { record: HistoryRecord, isReturned
            <div className="space-y-1">
              <p><span className="font-bold text-gray-400">Author:</span> {record.books.author || 'N/A'}</p>
              <p><span className="font-bold text-gray-400">Pages:</span> {record.books.pages || '-'}</p>
-             <p><span className="font-bold text-gray-400">Shelf:</span> {record.books.shelf_location || 'N/A'}</p>
+             <p><span className="font-bold text-gray-400">Publication:</span> {record.books.publication || 'N/A'}</p>
+             <p><span className="font-bold text-gray-400">Edition:</span> {record.books.edition || 'N/A'}</p>
+             <p><span className="font-bold text-gray-400">Price:</span> {record.books.price != null ? `₹${record.books.price}` : '-'}</p>
            </div>
            <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-gray-800"></div>
         </div>
