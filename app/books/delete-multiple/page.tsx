@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { deleteBooksWithCleanup } from '@/lib/delete-api-client'
 import Link from 'next/link'
 import {
   ArrowLeft, Search, Trash2, AlertTriangle, CheckCircle2, XCircle, Book
 } from 'lucide-react'
 import clsx from 'classnames'
-import Loading from '@/app/loading' // Assuming you have a loading component
 
 type BookInfo = {
   id: string;
@@ -70,14 +70,12 @@ export default function DeleteMultipleBooks() {
 
     const bookIds = booksToDelete.map(b => b.id)
 
-    // With ON DELETE CASCADE, only one delete call is needed
-    const { error } = await supabase.from('books').delete().in('id', bookIds)
-
-    if (error) {
-      setFeedback({ type: 'error', message: `Deletion failed: ${error.message}` })
-    } else {
-      setFeedback({ type: 'success', message: `Successfully deleted ${booksToDelete.length} book(s).` })
+    try {
+      const result = await deleteBooksWithCleanup(bookIds)
+      setFeedback({ type: 'success', message: `Successfully deleted ${result.deletedCount} book(s) and related records.` })
       resetState()
+    } catch (error) {
+      setFeedback({ type: 'error', message: error instanceof Error ? error.message : 'Deletion failed.' })
     }
     setLoading(false)
   }

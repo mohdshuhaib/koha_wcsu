@@ -2,11 +2,10 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { deleteAuthUserByEmail } from '@/app/actions/deleteMember'
+import { deleteMembersWithCleanup } from '@/lib/delete-api-client'
 import Link from 'next/link'
-import { ArrowLeft, Barcode, Search, Trash2, AlertTriangle, CheckCircle2, User } from 'lucide-react'
+import { ArrowLeft, Barcode, Search, Trash2, AlertTriangle } from 'lucide-react'
 import clsx from 'classnames'
-import Loading from '@/app/loading'
 
 // Define a type for the member data
 type MemberInfo = {
@@ -48,27 +47,22 @@ export default function DeleteMemberPage() {
     setLoading(true)
     setFeedback(null)
 
-    // With ON DELETE CASCADE, we only need to delete the member.
-    // The database will handle deleting their borrow and hold records.
-    const { error: dbError } = await supabase.from('members').delete().eq('id', memberToDelete.id)
-
-    if (dbError) {
-      setFeedback({ type: 'error', message: `Failed to delete from database: ${dbError.message}` })
+    try {
+      const result = await deleteMembersWithCleanup([memberToDelete.id])
+      const releaseText = result.releasedBookCount > 0
+        ? ` ${result.releasedBookCount} active borrowed/held book(s) were made available.`
+        : ''
+      const authText = result.authFailures > 0
+        ? ' The patron data was deleted, but the login account could not be found or removed.'
+        : ' Their login account was also removed.'
+      setFeedback({ type: result.authFailures > 0 ? 'warning' : 'success', message: `Successfully deleted "${memberToDelete.name}" and all related records.${releaseText}${authText}` })
+      setMemberToDelete(null)
+      setBarcode('')
+    } catch (error) {
+      setFeedback({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete patron.' })
       setLoading(false)
       return
     }
-
-    // After successful DB deletion, delete the auth user
-    const authUserDeleted = await deleteAuthUserByEmail(`${barcode.toLowerCase()}@member.wcsu`)
-
-    if (authUserDeleted) {
-      setFeedback({ type: 'success', message: `Successfully deleted "${memberToDelete.name}", their records, and their login account.` })
-    } else {
-      setFeedback({ type: 'warning', message: `Deleted "${memberToDelete.name}" from the database, but their login account was not found.` })
-    }
-
-    setMemberToDelete(null)
-    setBarcode('')
     setLoading(false)
   }
 

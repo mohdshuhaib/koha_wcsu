@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { deleteBooksWithCleanup } from '@/lib/delete-api-client'
 
 export default function DeleteAllBooks() {
   const [confirm, setConfirm] = useState('')
@@ -23,7 +24,6 @@ export default function DeleteAllBooks() {
   const bookIds = books?.map((b) => b.id)
   if (!bookIds.length) return setMessage('No books to delete.')
     setLoading(true)
-  // Step 2: Delete related borrow_records
   const chunkArray = <T,>(arr: T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
     arr.slice(i * size, i * size + size)
@@ -32,29 +32,15 @@ export default function DeleteAllBooks() {
 const CHUNK_SIZE = 100  // Safe limit
 
 for (const chunk of chunkArray(bookIds, CHUNK_SIZE)) {
-  const { error: borrowDeleteError } = await supabase
-    .from('borrow_records')
-    .delete()
-    .in('book_id', chunk)
-
-  if (borrowDeleteError) return setMessage('Failed to delete borrow records.')
-
-  const { error: holdDeleteError } = await supabase
-    .from('hold_records')
-    .delete()
-    .in('book_id', chunk)
-
-  if (holdDeleteError) return setMessage('Failed to delete hold records.')
-
-  const { error: bookDeleteError } = await supabase
-    .from('books')
-    .delete()
-    .in('id', chunk)
-
-  if (bookDeleteError) return setMessage('Failed to delete books.')
+  try {
+    await deleteBooksWithCleanup(chunk)
+  } catch (error) {
+    setLoading(false)
+    return setMessage(error instanceof Error ? error.message : 'Failed to delete books.')
+  }
 }
 
-  setMessage('All books and borrow records deleted.')
+  setMessage('All books and related records deleted.')
   setConfirm('')
   setLoading(false)
 }

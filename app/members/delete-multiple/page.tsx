@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { deleteAuthUserByEmail } from '@/app/actions/deleteMember'
+import { deleteMembersWithCleanup } from '@/lib/delete-api-client'
 import Link from 'next/link'
 import {
-  ArrowLeft, Search, Trash2, AlertTriangle, CheckCircle2, XCircle, User
+  ArrowLeft, Search, Trash2, AlertTriangle, XCircle, User
 } from 'lucide-react'
 import clsx from 'classnames'
-import Loading from '@/app/loading'
 
 type MemberInfo = {
   id: string;
@@ -125,32 +124,22 @@ export default function DeleteMultipleMembers() {
 
     const memberIds = membersToDelete.map(m => m.id)
 
-    // 1. Delete members from the database (cascade will handle records)
-    const { error: dbError } = await supabase.from('members').delete().in('id', memberIds)
-
-    if (dbError) {
-      setFeedback({ type: 'error', message: `Deletion failed: ${dbError.message}` })
+    try {
+      const result = await deleteMembersWithCleanup(memberIds)
+      const releaseText = result.releasedBookCount > 0
+        ? ` ${result.releasedBookCount} active borrowed/held book(s) were made available.`
+        : ''
+      if (result.authFailures > 0) {
+        setFeedback({ type: 'warning', message: `Deleted ${result.deletedCount} patron(s) and related records.${releaseText} ${result.authFailures} login account(s) could not be found or removed.`})
+      } else {
+        setFeedback({ type: 'success', message: `Deleted ${result.deletedCount} patron(s), related records, and login accounts.${releaseText}`})
+      }
+      resetState()
+    } catch (error) {
+      setFeedback({ type: 'error', message: error instanceof Error ? error.message : 'Deletion failed.' })
       setLoading(false)
       return
     }
-
-    // 2. Delete auth users one by one
-    let authFailures = 0;
-    for (const member of membersToDelete) {
-      const deleted = await deleteAuthUserByEmail(`${member.barcode.toLowerCase()}@member.wcsu`)
-      if (!deleted) {
-        authFailures++;
-      }
-    }
-
-    let successMessage = `Successfully deleted ${membersToDelete.length} patron(s) from the database.`
-    if (authFailures > 0) {
-        setFeedback({ type: 'warning', message: `${successMessage} However, ${authFailures} login account(s) could not be found or deleted.`})
-    } else {
-        setFeedback({ type: 'success', message: `${successMessage} All associated login accounts were also removed.`})
-    }
-
-    resetState()
     setLoading(false)
   }
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { deleteBooksWithCleanup } from '@/lib/delete-api-client'
 import Link from 'next/link'
 import { ArrowLeft, Barcode, Search, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import clsx from 'classnames'
@@ -46,15 +47,13 @@ export default function DeleteBookPage() {
     setLoading(true)
     setFeedback(null)
 
-    // With ON DELETE CASCADE set up in your database, you only need to do this one operation.
-    const { error } = await supabase.from('books').delete().eq('id', bookToDelete.id)
-
-    if (error) {
-      setFeedback({ type: 'error', message: `Failed to delete book: ${error.message}` })
-    } else {
+    try {
+      await deleteBooksWithCleanup([bookToDelete.id])
       setFeedback({ type: 'success', message: `Successfully deleted "${bookToDelete.title}".` })
       setBookToDelete(null)
       setBarcode('')
+    } catch (error) {
+      setFeedback({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete book.' })
     }
     setLoading(false)
   }

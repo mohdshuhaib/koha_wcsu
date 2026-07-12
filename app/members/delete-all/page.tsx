@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { deleteAuthUserByEmail } from '@/app/actions/deleteMember'
+import { deleteMembersWithCleanup } from '@/lib/delete-api-client'
 
 export default function DeleteAllMembers() {
   const [confirm, setConfirm] = useState('')
@@ -14,7 +14,6 @@ export default function DeleteAllMembers() {
       return setMessage('Type DELETE to confirm.')
     }
 
-    // 1. Get all members
     const { data: members } = await supabase.from('members').select('id, barcode')
 
     if (!members?.length) return setMessage('No members found.')
@@ -22,20 +21,15 @@ export default function DeleteAllMembers() {
     const memberIds = members.map((m) => m.id)
     setLoading(true)
 
-    // 2. Delete borrow records
-    await supabase.from('borrow_records').delete().in('member_id', memberIds)
-    await supabase.from('hold_records').delete().in('member_id', memberIds)
-
-    // 3. Delete members
-    await supabase.from('members').delete().in('id', memberIds)
-
-    // 4. Delete auth users
-    for (const m of members) {
-      await deleteAuthUserByEmail(`${m.barcode.toLowerCase()}@member.wcsu`)
+    try {
+      const result = await deleteMembersWithCleanup(memberIds)
+      setMessage(`Deleted ${result.deletedCount} members and related records. ${result.releasedBookCount} active borrowed/held book(s) were made available.`)
+      setConfirm('')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to delete members.')
+    } finally {
+      setLoading(false)
     }
-
-    setMessage('All members, borrow records, and user accounts deleted.')
-    setConfirm('')
   }
 
   return (
