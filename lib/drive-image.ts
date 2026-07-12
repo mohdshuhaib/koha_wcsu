@@ -7,7 +7,7 @@ export function getDriveImageUrl(url?: string | null) {
   const id = fileMatch?.[1] || idParamMatch?.[1]
 
   if (id) {
-    return `https://drive.google.com/uc?export=view&id=${id}`
+    return `https://drive.google.com/thumbnail?id=${id}&sz=w600`
   }
 
   return trimmed

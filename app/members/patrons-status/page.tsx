@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, ReactNode } from 'react'
 import dayjs from 'dayjs'
 import Loading from '@/app/loading'
 import { supabase } from '@/lib/supabase'
+import { getDriveImageUrl } from '@/lib/drive-image'
 import { Search, X, BookOpen, IndianRupee, ChevronLeft, ChevronRight, Eye, ArrowLeft, Download, Calendar, Check, Clock, Printer, Info } from 'lucide-react'
 import Link from 'next/link'
 import clsx from 'classnames';
@@ -310,8 +311,16 @@ export default function PatronStatusPage() {
       <DetailsModal isOpen={!!selectedMember} onClose={closeModal}>
         {detailsLoading ? <Loading /> : memberDetails ? (
           <>
-            <div className="p-4 border-b border-primary-dark-grey flex justify-between items-center">
-                <h2 className="text-xl font-bold text-heading-text-black">{memberDetails.name}'s Status</h2>
+            <div className="p-4 border-b border-primary-dark-grey flex justify-between items-center gap-4">
+                <div className="flex items-center gap-4">
+                    <PatronPassportPhoto member={selectedMember} />
+                    <div>
+                        <h2 className="text-xl font-bold text-heading-text-black">{memberDetails.name}'s Status</h2>
+                        <p className="text-sm text-text-grey">
+                          {selectedMember?.barcode} {selectedMember?.batch ? `- ${selectedMember.batch}` : ''}
+                        </p>
+                    </div>
+                </div>
                 <div className="flex items-center gap-2">
                     <button onClick={() => handlePrintMemberHistory(memberDetails)} disabled={isPrinting} className="p-1.5 rounded-full text-text-grey hover:bg-primary-dark-grey disabled:opacity-50" title="Print Reading History">
                         {isPrinting ? <LoadingSpinner/> : <Printer size={18} />}
@@ -337,6 +346,30 @@ export default function PatronStatusPage() {
 }
 
 // --- Helper Components ---
+function PatronPassportPhoto({ member }: { member: Member | null }) {
+  const imageUrl = getDriveImageUrl(member?.image_link)
+  const [imageFailed, setImageFailed] = useState(false)
+
+  if (!imageUrl || imageFailed) {
+    return (
+      <div className="flex h-32 w-24 shrink-0 items-center justify-center rounded-md border border-primary-dark-grey bg-primary-grey text-center text-xs font-semibold text-text-grey">
+        {imageFailed ? 'Photo unavailable' : 'No Photo'}
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-32 w-24 shrink-0 overflow-hidden rounded-md border border-primary-dark-grey bg-primary-grey shadow-sm">
+      <img
+        src={imageUrl}
+        alt={`${member?.name || 'Patron'} photo`}
+        referrerPolicy="no-referrer"
+        className="h-full w-full object-cover"
+        onError={() => setImageFailed(true)}
+      />
+    </div>
+  )
+}
 
 // ✨ NEW: Individual History Item Component to handle tooltip state
 function HistoryItem({ record, isReturnedList }: { record: BorrowRecord, isReturnedList: boolean }) {
