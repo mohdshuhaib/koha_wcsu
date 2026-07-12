@@ -57,7 +57,7 @@ export default function LeaderboardCard({ title, icon, data, unit, showPagesTogg
           <li key={i} className="flex items-center justify-between p-2 rounded-md hover:bg-primary-grey transition">
             <span className="flex items-center gap-3">
               <span className="text-lg w-6 text-center font-mono">{medals[i] || `${i + 1}.`}</span>
-              <span className="font-semibold text-heading-text-black max-w-[120px] sm:max-w-[150px]" title={item.name}>
+              <span className={clsx("font-semibold text-heading-text-black max-w-[120px] sm:max-w-[150px]", title === 'Top Books' && 'font-malayalam')} title={item.name}>
                 {item.name}
               </span>
             </span>

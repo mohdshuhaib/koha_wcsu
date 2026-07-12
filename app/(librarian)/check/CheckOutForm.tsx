@@ -699,7 +699,7 @@ export default function CheckOutForm() {
                 <div className="mt-0.5 flex-shrink-0">
                   {isError ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
                 </div>
-                <p className="break-words font-medium leading-6">{message}</p>
+                <p className="break-words font-malayalam font-medium leading-6">{message}</p>
               </div>
             )}
           </div>

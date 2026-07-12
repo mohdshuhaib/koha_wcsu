@@ -124,11 +124,11 @@ export default function Navbar() {
                     { href: '/admins', label: 'Admins' },
                     { href: '/fines', label: 'Fines' },
                     { href: '/periodicals', label: 'Periodicals' },
+                    { href: '/reviews', label: 'Reviews' },
                     { href: '/barcode-generator', label: 'Barcode Generator' },
                     { href: '/dev-support', label: 'System Support' },
                   ]
                 : [
-                    { href: '/admins', label: 'Admins' },
                     { href: '/fines', label: 'Fines' },
                     { href: '/periodicals', label: 'Periodicals' },
                     { href: '/dev-support', label: 'System Support' },
