@@ -9,11 +9,13 @@ import type { Book, BookReview } from '@/app/catalog/catalog-utils'
 export default function BookCard({
   book,
   onOpenReview,
+  onOpenAllReviews,
   getLanguageName,
   getReviewStats,
 }: {
   book: Book
   onOpenReview: () => void
+  onOpenAllReviews: () => void
   getLanguageName: (code: string | null | undefined) => string
   getReviewStats: (reviews?: BookReview[]) => {
     count: number
@@ -61,9 +63,14 @@ export default function BookCard({
             <Star size={14} className="fill-current" />
             {stats.count > 0 ? `${stats.roundedAverage}/5` : 'No ratings'}
           </span>
-          <span>
+          <button
+            type="button"
+            onClick={onOpenAllReviews}
+            disabled={stats.count === 0}
+            className="font-semibold text-dark-green transition hover:underline disabled:cursor-default disabled:text-text-grey disabled:no-underline"
+          >
             {stats.count} review{stats.count === 1 ? '' : 's'}
-          </span>
+          </button>
         </div>
 
         {latestReview && (
@@ -79,9 +86,13 @@ export default function BookCard({
                   </p>
                 )}
                 {extraReviewCount > 0 && (
-                  <p className="mt-1 text-xs font-semibold text-dark-green">
+                  <button
+                    type="button"
+                    onClick={onOpenAllReviews}
+                    className="mt-1 text-left text-xs font-semibold text-dark-green hover:underline"
+                  >
                     +{extraReviewCount} more review{extraReviewCount === 1 ? '' : 's'}
-                  </p>
+                  </button>
                 )}
               </div>
 

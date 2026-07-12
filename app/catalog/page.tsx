@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Loading from '@/app/loading'
 import * as XLSX from 'xlsx'
+import { Star, X } from 'lucide-react'
 
 import CatalogHeader from '@/components/catalog/CatalogHeader'
 import CatalogFilters from '@/components/catalog/CatalogFilters'
@@ -33,6 +34,7 @@ export default function CatalogPage() {
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [sortBy, setSortBy] = useState('barcode')
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+  const [reviewsBook, setReviewsBook] = useState<Book | null>(null)
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [isCatalogueDropdownOpen, setIsCatalogueDropdownOpen] = useState(false)
   const [reviewNotice, setReviewNotice] = useState<{
@@ -296,6 +298,7 @@ export default function CatalogPage() {
                     key={book.id}
                     book={book}
                     onOpenReview={() => setSelectedBook(book)}
+                    onOpenAllReviews={() => setReviewsBook(book)}
                     getLanguageName={getLanguageName}
                     getReviewStats={getReviewStats}
                   />
@@ -327,6 +330,7 @@ export default function CatalogPage() {
                             key={book.id}
                             book={book}
                             onOpenReview={() => setSelectedBook(book)}
+                            onOpenAllReviews={() => setReviewsBook(book)}
                             getLanguageName={getLanguageName}
                             getReviewStats={getReviewStats}
                           />
@@ -379,6 +383,106 @@ export default function CatalogPage() {
           submitting={isSubmittingReview}
         />
       )}
+
+      {reviewsBook && (
+        <AllReviewsModal
+          book={reviewsBook}
+          onClose={() => setReviewsBook(null)}
+          getReviewStats={getReviewStats}
+        />
+      )}
+    </div>
+  )
+}
+
+function AllReviewsModal({
+  book,
+  onClose,
+  getReviewStats,
+}: {
+  book: Book
+  onClose: () => void
+  getReviewStats: typeof import('./catalog-utils').getReviewStats
+}) {
+  const reviews = (book.book_reviews || []).filter((review) => review.approved !== false)
+  const stats = getReviewStats(reviews)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-primary-dark-grey bg-secondary-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-primary-dark-grey p-4 sm:p-5">
+          <div className="min-w-0">
+            <h2 className="break-words font-malayalam text-xl font-bold text-heading-text-black">
+              {book.title}
+            </h2>
+            <p className="mt-1 text-sm text-text-grey">{book.author || '-'}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-text-grey">
+              <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 font-semibold text-yellow-700">
+                <Star size={14} className="fill-current" />
+                {stats.count > 0 ? `${stats.roundedAverage}/5` : 'No ratings'}
+              </span>
+              <span>{stats.count} review{stats.count === 1 ? '' : 's'}</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-text-grey transition hover:bg-primary-grey hover:text-red-600"
+            aria-label="Close reviews"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+          {reviews.length > 0 ? (
+            <div className="space-y-3">
+              {reviews.map((review) => (
+                <article
+                  key={review.id}
+                  className="rounded-xl border border-primary-dark-grey bg-primary-grey/40 p-4"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-heading-text-black">
+                        {review.reviewer_name}
+                      </p>
+                      {review.reviewer_role && (
+                        <p className="text-xs font-medium text-text-grey">{review.reviewer_role}</p>
+                      )}
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-1 text-yellow-700">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          size={15}
+                          className={
+                            index < review.rating
+                              ? 'fill-current text-yellow-500'
+                              : 'text-gray-300'
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {review.comment && (
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-text-grey">
+                      {review.comment}
+                    </p>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-primary-dark-grey bg-primary-grey/50 p-8 text-center text-sm font-medium text-text-grey">
+              No visible reviews for this book yet.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
