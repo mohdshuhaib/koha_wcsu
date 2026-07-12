@@ -32,6 +32,14 @@ type EditState = {
   approved: boolean
 }
 
+async function getAccessToken() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  return session?.access_token || ''
+}
+
 export default function ReviewsPage() {
   const router = useRouter()
   const [checkingSession, setCheckingSession] = useState(true)
@@ -125,21 +133,27 @@ export default function ReviewsPage() {
 
     setSaving(true)
     setMessage('')
-    const { error } = await supabase
-      .from('book_reviews')
-      .update({
+    const token = await getAccessToken()
+    const response = await fetch(`/api/reviews/${editingReview.id}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         reviewer_name: editForm.reviewer_name.trim(),
         reviewer_role: editForm.reviewer_role.trim() || null,
         comment: editForm.comment.trim() || null,
         rating: editForm.rating,
         approved: editForm.approved,
-      })
-      .eq('id', editingReview.id)
+      }),
+    })
+    const result = await response.json()
 
     setSaving(false)
 
-    if (error) {
-      setMessage(error.message)
+    if (!response.ok) {
+      setMessage(result.error || 'Could not update this review.')
       return
     }
 
@@ -150,13 +164,19 @@ export default function ReviewsPage() {
 
   const toggleApproved = async (review: Review) => {
     const nextApproved = review.approved === false
-    const { error } = await supabase
-      .from('book_reviews')
-      .update({ approved: nextApproved })
-      .eq('id', review.id)
+    const token = await getAccessToken()
+    const response = await fetch(`/api/reviews/${review.id}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ approved: nextApproved }),
+    })
+    const result = await response.json()
 
-    if (error) {
-      setMessage(error.message)
+    if (!response.ok) {
+      setMessage(result.error || 'Could not update review visibility.')
       return
     }
 
@@ -170,11 +190,16 @@ export default function ReviewsPage() {
 
     setSaving(true)
     setMessage('')
-    const { error } = await supabase.from('book_reviews').delete().eq('id', reviewToDelete.id)
+    const token = await getAccessToken()
+    const response = await fetch(`/api/reviews/${reviewToDelete.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const result = await response.json()
     setSaving(false)
 
-    if (error) {
-      setMessage(error.message)
+    if (!response.ok) {
+      setMessage(result.error || 'Could not delete this review.')
       return
     }
 

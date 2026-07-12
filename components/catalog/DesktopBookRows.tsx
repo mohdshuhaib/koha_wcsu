@@ -25,6 +25,9 @@ export default function DesktopBookRows({
   const activeHold = book.hold_records?.find((hr) => !hr.released)
   const heldBy = activeHold?.member?.name
   const stats = getReviewStats(book.book_reviews)
+  const approvedReviews = book.book_reviews?.filter((r) => r.approved !== false) || []
+  const latestReview = approvedReviews[0]
+  const extraReviewCount = Math.max(approvedReviews.length - 1, 0)
 
   return (
     <>
@@ -91,48 +94,41 @@ export default function DesktopBookRows({
               </button>
             </div>
 
-            {book.book_reviews &&
-              book.book_reviews.filter((r) => r.approved !== false).length > 0 && (
-                <div className="grid gap-2">
-                  {book.book_reviews
-                    .filter((r) => r.approved !== false)
-                    .slice(0, 2)
-                    .map((review) => (
-                      <div
-                        key={review.id}
-                        className="rounded-xl border border-primary-dark-grey bg-white px-4 py-3"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-semibold text-heading-text-black">
-                              {review.reviewer_name}
-                              {review.reviewer_role ? ` • ${review.reviewer_role}` : ''}
-                            </div>
-                            {review.comment && (
-                              <p className="mt-1 text-sm text-text-grey">
-                                {review.comment}
-                              </p>
-                            )}
-                          </div>
+            {latestReview && (
+              <div className="rounded-xl border border-primary-dark-grey bg-white px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-heading-text-black">
+                      Latest review by {latestReview.reviewer_name}
+                    </div>
+                    {latestReview.comment && (
+                      <p className="mt-1 line-clamp-2 text-sm text-text-grey">
+                        {latestReview.comment}
+                      </p>
+                    )}
+                    {extraReviewCount > 0 && (
+                      <p className="mt-1 text-xs font-semibold text-dark-green">
+                        +{extraReviewCount} more review{extraReviewCount === 1 ? '' : 's'}
+                      </p>
+                    )}
+                  </div>
 
-                          <div className="flex items-center gap-1 text-yellow-700 font-semibold">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                size={14}
-                                className={clsx(
-                                  i < review.rating
-                                    ? 'fill-current text-yellow-500'
-                                    : 'text-gray-300'
-                                )}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                  <div className="flex shrink-0 items-center gap-1 text-yellow-700 font-semibold">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        size={14}
+                        className={clsx(
+                          i < latestReview.rating
+                            ? 'fill-current text-yellow-500'
+                            : 'text-gray-300'
+                        )}
+                      />
                     ))}
+                  </div>
                 </div>
-              )}
+              </div>
+            )}
           </div>
         </td>
       </tr>

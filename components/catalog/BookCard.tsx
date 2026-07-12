@@ -26,8 +26,9 @@ export default function BookCard({
   const activeHold = book.hold_records?.find((hr) => !hr.released)
   const heldBy = activeHold?.member?.name
   const stats = getReviewStats(book.book_reviews)
-  const approvedReviews =
-    book.book_reviews?.filter((r) => r.approved !== false).slice(0, 2) || []
+  const approvedReviews = book.book_reviews?.filter((r) => r.approved !== false) || []
+  const latestReview = approvedReviews[0]
+  const extraReviewCount = Math.max(approvedReviews.length - 1, 0)
 
   return (
     <article className="overflow-hidden rounded-[1.5rem] border border-primary-dark-grey bg-white shadow-sm transition hover:shadow-md">
@@ -65,44 +66,41 @@ export default function BookCard({
           </span>
         </div>
 
-        {approvedReviews.length > 0 && (
-          <div className="space-y-2">
-            {approvedReviews.map((review) => (
-              <div
-                key={review.id}
-                className="rounded-2xl border border-primary-dark-grey bg-primary-grey/50 p-3"
-              >
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-sm font-semibold text-heading-text-black">
-                    {review.reviewer_name}
-                    {review.reviewer_role ? ` • ${review.reviewer_role}` : ''}
-                  </div>
-
-                  <div className="flex items-center gap-1 text-yellow-700">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        size={14}
-                        className={clsx(
-                          i < review.rating
-                            ? 'fill-current text-yellow-500'
-                            : 'text-gray-300'
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {review.comment && (
-                  <p className="mt-2 text-sm leading-6 text-text-grey">
-                    {review.comment}
+        {latestReview && (
+          <div className="rounded-2xl border border-primary-dark-grey bg-primary-grey/50 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-heading-text-black">
+                  Latest review by {latestReview.reviewer_name}
+                </p>
+                {latestReview.comment && (
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-text-grey">
+                    {latestReview.comment}
+                  </p>
+                )}
+                {extraReviewCount > 0 && (
+                  <p className="mt-1 text-xs font-semibold text-dark-green">
+                    +{extraReviewCount} more review{extraReviewCount === 1 ? '' : 's'}
                   </p>
                 )}
               </div>
-            ))}
+
+              <div className="flex shrink-0 items-center gap-1 text-yellow-700">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    size={14}
+                    className={clsx(
+                      i < latestReview.rating
+                        ? 'fill-current text-yellow-500'
+                        : 'text-gray-300'
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
-
         <button
           onClick={onOpenReview}
           className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-button-yellow px-4 py-3 text-sm font-semibold text-button-text-black transition hover:bg-yellow-500"

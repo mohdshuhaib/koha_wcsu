@@ -35,6 +35,10 @@ export default function CatalogPage() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [isCatalogueDropdownOpen, setIsCatalogueDropdownOpen] = useState(false)
+  const [reviewNotice, setReviewNotice] = useState<{
+    type: 'success' | 'error'
+    text: string
+  } | null>(null)
 
   const [reviewForm, setReviewForm] = useState<ReviewFormState>({
     reviewer_name: '',
@@ -181,16 +185,17 @@ export default function CatalogPage() {
     if (!selectedBook) return
 
     if (!reviewForm.reviewer_name.trim()) {
-      alert('Please enter your name.')
+      setReviewNotice({ type: 'error', text: 'Please enter your name before submitting the review.' })
       return
     }
 
     if (reviewForm.rating < 1 || reviewForm.rating > 5) {
-      alert('Please select a rating.')
+      setReviewNotice({ type: 'error', text: 'Please select a star rating before submitting the review.' })
       return
     }
 
     setIsSubmittingReview(true)
+    setReviewNotice(null)
 
     const { error } = await supabase.from('book_reviews').insert({
       book_id: selectedBook.id,
@@ -204,11 +209,17 @@ export default function CatalogPage() {
 
     if (error) {
       console.error('Review insert error:', error)
-      alert('Could not submit review. Please try again.')
+      setReviewNotice({
+        type: 'error',
+        text: 'We could not save your review right now. Please try again.',
+      })
       return
     }
 
-    alert('Review submitted successfully.')
+    setReviewNotice({
+      type: 'success',
+      text: `Thank you for sharing your review of "${selectedBook.title}". It has been saved successfully.`,
+    })
     setSelectedBook(null)
     resetReviewForm()
     fetchBooks()
@@ -248,6 +259,18 @@ export default function CatalogPage() {
             sortOptions={SORT_OPTIONS}
           />
         </div>
+
+        {reviewNotice && (
+          <div
+            className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+              reviewNotice.type === 'success'
+                ? 'border-green-200 bg-green-50 text-green-800'
+                : 'border-red-200 bg-red-50 text-red-800'
+            }`}
+          >
+            {reviewNotice.text}
+          </div>
+        )}
 
         <section className="rounded-[2rem] border border-primary-dark-grey/70 bg-secondary-white/90 p-4 shadow-xl sm:p-5 lg:p-6">
           {loading ? (
