@@ -69,6 +69,10 @@ export async function POST(req: Request) {
 
     if (dbError) {
       console.error('DB error:', dbError.message)
+      const { error: rollbackError } = await supabase.auth.admin.deleteUser(authUser.user.id)
+      if (rollbackError) {
+        console.error('Auth rollback error:', rollbackError.message)
+      }
       return NextResponse.json({ error: dbError.message }, { status: 500 })
     }
 

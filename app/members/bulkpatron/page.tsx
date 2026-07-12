@@ -55,8 +55,32 @@ export default function BulkUploadMembers() {
       skipEmptyLines: true,
       complete: async (results) => {
         const rows = results.data as MemberRow[]
+        const invalidRowIndex = rows.findIndex(r => !r.name || !r.category || !r.barcode || !r.batch)
+
+        if (invalidRowIndex >= 0) {
+          setUploadResult({
+            type: 'error',
+            message: `Row ${invalidRowIndex + 2} is missing required data. Please fill name, category, barcode, and batch for every row.`,
+          })
+          setLoading(false)
+          return
+        }
+
+        const duplicateBarcodes = rows
+          .map((row) => row.barcode?.trim().toUpperCase())
+          .filter(Boolean)
+          .filter((barcode, index, all) => all.indexOf(barcode) !== index)
+
+        if (duplicateBarcodes.length > 0) {
+          setUploadResult({
+            type: 'error',
+            message: `Duplicate barcode found in CSV: ${Array.from(new Set(duplicateBarcodes)).join(', ')}.`,
+          })
+          setLoading(false)
+          return
+        }
+
         const validRows = rows
-          .filter(r => r.name && r.category && r.barcode && r.batch)
           .map((row) => ({
             name: row.name.trim(),
             category: row.category.trim().toLowerCase() === 'outsider' ? 'outside' : row.category.trim().toLowerCase(),
@@ -88,9 +112,15 @@ export default function BulkUploadMembers() {
           setUploadResult({ type: 'error', message: `Upload failed: ${result.error || 'Please try again.'}` })
         } else {
           const failedCount = result.failed?.length || 0
+          const repairedText = result.repairedAuthCount
+            ? ` ${result.repairedAuthCount} existing orphan login account(s) were repaired.`
+            : ''
+          const updatedText = result.updatedMemberCount
+            ? ` ${result.updatedMemberCount} existing patron row(s) were updated.`
+            : ''
           const message = failedCount > 0
             ? `${result.addedCount} patrons were uploaded with login accounts. ${failedCount} row(s) failed.`
-            : `${result.addedCount} patrons were uploaded successfully with login accounts!`
+            : `${result.addedCount} patrons were uploaded successfully with login accounts!${repairedText}${updatedText}`
 
           setUploadResult({ type: failedCount > 0 ? 'error' : 'success', message })
           if (failedCount === 0) setSelectedFile(null) // Clear file on success
