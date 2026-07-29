@@ -69,13 +69,38 @@ export default function BooksHomePage() {
             description="Remove a range of books by their barcodes."
           />
 
-          {/* This button now looks like the other cards for consistency */}
           <ActionCard
             as="button"
             onClick={() => setShowUpdatePanel(true)}
             icon={<Edit className="text-yellow-500" size={32} />}
             title="Update a Book"
             description="Find a book by its barcode to edit its details."
+          />
+          
+          <ActionCard
+            href="books/add/risala"
+            icon={<PlusCircle className="text-green-500" size={32} />}
+            title="Add Single Risala"
+            description="Manually enter the details for one new Risala."
+          />
+          <ActionCard
+            href="books/bulk-upload/risala"
+            icon={<UploadCloud className="text-blue-500" size={32} />}
+            title="Bulk Upload Risala"
+            description="Upload a CSV/Excel file to add multiple Risalas at once."
+          />
+
+          <ActionCard
+            href="books/add/reference"
+            icon={<PlusCircle className="text-green-500" size={32} />}
+            title="Add Single Reference"
+            description="Manually enter the details for one new Reference book."
+          />
+          <ActionCard
+            href="books/bulk-upload/reference"
+            icon={<UploadCloud className="text-blue-500" size={32} />}
+            title="Bulk Upload Reference"
+            description="Upload a CSV/Excel file to add multiple Reference books at once."
           />
         </div>
       </div>

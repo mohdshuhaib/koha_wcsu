@@ -68,6 +68,7 @@ export default function Navbar() {
     }
   }, [])
 
+
   useEffect(() => {
     setIsMenuOpen(false)
     setMobileSearch('')
@@ -88,7 +89,14 @@ export default function Navbar() {
 
   const navItems: NavItemType[] = useMemo(() => [
     { href: '/', label: 'Home' },
-    { href: '/catalog', label: 'Catalog' },
+    {
+      label: 'Catalog',
+      children: [
+        { href: '/catalog', label: 'Book Catalog' },
+        { href: '/catalog/risala', label: 'Risala Catalog' },
+        { href: '/catalog/reference', label: 'Reference Catalog' },
+      ],
+    },
     { href: '/patrons', label: 'Members' },
 
     ...(isLoggedIn ? [
@@ -105,7 +113,6 @@ export default function Navbar() {
       ...(role === 'librarian' || role === 'admin'
         ? [{ href: '/dashboard', label: 'Dashboard' }]
         : []),
-
       ...(role === 'member'
         ? [{ href: '/member/dashboard-mem', label: 'Dashboard' }]
         : []),
