@@ -35,7 +35,7 @@ export default function Hero() {
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-600"></span>
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600 sm:text-xs">
-                    Wafy Campus Kalikkavu
+                    Wafy Campus Kalikavu
                   </span>
                 </div>
               </div>

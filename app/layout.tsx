@@ -13,8 +13,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://wcsulibrary.vercel.app"),
-  title: "Campus Library - Wafy College Kattilangadi",
-  description: "Library management system for Wafy Campus Kalikkavu.",
+  title: "Campus Library - Wafy Campus Kalikavu",
+  description: "Library management system for Wafy Campus Kalikavu.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     title: "Campus Library",
   },
   openGraph: {
-    title: "Campus Library - Wafy College Kattilangadi",
-    description: "Library management system for Wafy Campus Kalikkavu.",
+    title: "Campus Library - Wafy Campus Kalikavu",
+    description: "Library management system for Wafy Campus Kalikavu.",
     url: "https://wcsulibrary.vercel.app",
     siteName: "Campus Library",
     images: [
